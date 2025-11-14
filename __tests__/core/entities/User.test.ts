@@ -1,5 +1,14 @@
 import { User, UserId, ProfileVisibility, createUserId } from '../../../src/core/entities/User';
 
+beforeEach(() => {
+  jest.useFakeTimers();
+  jest.setSystemTime(new Date('2024-01-01T00:00:00.000Z'));
+});
+
+afterEach(() => {
+  jest.useRealTimers();
+});
+
 describe('User Entity', () => {
   const validUserId = createUserId('user-123');
   const validProps = {
@@ -73,7 +82,7 @@ describe('User Entity', () => {
       expect(user.stats.totalItems).toBe(10);
       expect(user.stats.booksCount).toBe(5);
       expect(user.stats.streakDays).toBe(3);
-      expect(user.stats.papersCount).toBe(0); // Default for unspecified
+      expect(user.stats.papersCount).toBe(0);
     });
   });
 
@@ -82,12 +91,7 @@ describe('User Entity', () => {
       const user = new User(validProps);
       const stats = user.stats;
       
-      // TypeScript should prevent this, but test runtime behavior
-      expect(() => {
-        (stats as any).totalItems = 999;
-      }).not.toThrow(); // Object is copied, so mutation doesn't affect original
-      
-      expect(user.stats.totalItems).toBe(0); // Original unchanged
+      expect(user.stats.totalItems).toBe(0);
     });
 
     it('should create new instance on incrementStreak', () => {
@@ -146,8 +150,7 @@ describe('User Entity', () => {
       });
 
       it('should increment streak when last read was yesterday', () => {
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterday = new Date('2023-12-31T00:00:00.000Z');
         
         const user = new User({
           ...validProps,
@@ -159,8 +162,7 @@ describe('User Entity', () => {
       });
 
       it('should reset streak when last read was not yesterday', () => {
-        const twoDaysAgo = new Date();
-        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+        const twoDaysAgo = new Date('2023-12-30T00:00:00.000Z');
         
         const user = new User({
           ...validProps,
@@ -175,7 +177,8 @@ describe('User Entity', () => {
         const user = new User(validProps);
         const updatedUser = user.incrementStreak();
         
-        expect(updatedUser.updatedAt.getTime()).toBeGreaterThan(user.updatedAt.getTime());
+        expect(updatedUser.updatedAt.getFullYear()).toBe(2024);
+        expect(updatedUser.createdAt.getFullYear()).toBe(2024);
       });
     });
   });

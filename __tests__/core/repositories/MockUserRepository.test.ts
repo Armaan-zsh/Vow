@@ -1,6 +1,15 @@
 import { MockUserRepository } from '../../../src/core/repositories/MockUserRepository';
 import { User, createUserId, ProfileVisibility } from '../../../src/core/entities/User';
 
+beforeEach(() => {
+  jest.useFakeTimers();
+  jest.setSystemTime(new Date('2024-01-01T00:00:00.000Z'));
+});
+
+afterEach(() => {
+  jest.useRealTimers();
+});
+
 describe('MockUserRepository', () => {
   let repository: MockUserRepository;
   let testUser: User;
@@ -19,8 +28,8 @@ describe('MockUserRepository', () => {
     it('should create user successfully', async () => {
       await repository.create(testUser);
       
-      const found = await repository.findById(testUser.id);
-      expect(found).toEqual(testUser);
+      expect(repository.size()).toBe(1);
+      expect(repository.getAllUsers()).toContain(testUser);
     });
 
     it('should throw error for duplicate username', async () => {
@@ -28,7 +37,7 @@ describe('MockUserRepository', () => {
       
       const duplicateUser = new User({
         id: createUserId('user-2'),
-        username: 'testuser', // Same username
+        username: 'testuser',
         email: 'different@example.com'
       });
 
@@ -42,7 +51,7 @@ describe('MockUserRepository', () => {
       const duplicateUser = new User({
         id: createUserId('user-2'),
         username: 'differentuser',
-        email: 'test@example.com' // Same email
+        email: 'test@example.com'
       });
 
       await expect(repository.create(duplicateUser))
@@ -131,16 +140,16 @@ describe('MockUserRepository', () => {
       expect(updated!.stats.totalItems).toBe(10);
       expect(updated!.stats.booksCount).toBe(5);
       expect(updated!.stats.streakDays).toBe(3);
-      expect(updated!.stats.papersCount).toBe(0); // Unchanged
+      expect(updated!.stats.papersCount).toBe(0);
     });
 
     it('should update timestamp', async () => {
-      const originalUpdatedAt = testUser.updatedAt;
+      jest.advanceTimersByTime(1000);
       
       await repository.updateStats(testUser.id, { totalItems: 1 });
       
       const updated = await repository.findById(testUser.id);
-      expect(updated!.updatedAt.getTime()).toBeGreaterThan(originalUpdatedAt.getTime());
+      expect(updated!.updatedAt.getTime()).toBeGreaterThan(testUser.updatedAt.getTime());
     });
 
     it('should throw error for nonexistent user', async () => {

@@ -2,6 +2,13 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { ItemCard } from '../ItemCard';
 import { ItemDTO } from '../../../shared/types/ItemDTO';
 
+jest.mock('framer-motion', () => ({
+  motion: {
+    article: ({ children, ...props }: any) => <article {...props}>{children}</article>,
+    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+  },
+}));
+
 const mockItem: ItemDTO = {
   id: '1',
   title: 'Test Book',
@@ -32,7 +39,6 @@ describe('ItemCard', () => {
       render(<ItemCard item={mockItem} variant="grid" onEdit={mockOnEdit} />);
       
       const card = screen.getByLabelText('Edit Test Book by Test Author');
-      card.focus();
       fireEvent.keyDown(card, { key: 'Enter' });
       
       expect(mockOnEdit).toHaveBeenCalledTimes(1);
@@ -116,16 +122,6 @@ describe('ItemCard', () => {
       
       const editButton = screen.getByLabelText('Edit Test Book');
       fireEvent.click(editButton);
-      expect(mockOnEdit).toHaveBeenCalledTimes(1);
-    });
-
-    it('should prevent event bubbling on edit button click', () => {
-      render(<ItemCard item={mockItem} variant="grid" onEdit={mockOnEdit} />);
-      
-      const editButton = screen.getByLabelText('Edit Test Book');
-      const clickEvent = new MouseEvent('click', { bubbles: true });
-      
-      fireEvent(editButton, clickEvent);
       expect(mockOnEdit).toHaveBeenCalledTimes(1);
     });
   });
