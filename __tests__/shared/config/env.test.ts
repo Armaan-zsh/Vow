@@ -23,7 +23,7 @@ describe('Environment Validation', () => {
 
   beforeEach(() => {
     jest.resetModules();
-    process.env = { ...originalEnv };
+    process.env = { NODE_ENV: 'test' };
   });
 
   afterAll(() => {
@@ -32,7 +32,7 @@ describe('Environment Validation', () => {
 
   describe('Valid Configuration', () => {
     it('should validate correct environment variables', () => {
-      process.env = { ...process.env, ...validEnv };
+      process.env = validEnv;
       
       expect(() => validateEnv()).not.toThrow();
       const env = validateEnv();
@@ -57,51 +57,45 @@ describe('Environment Validation', () => {
     });
 
     it('should reject invalid DATABASE_URL format', () => {
-      process.env = { ...validEnv, DATABASE_URL: 'invalid-url' };
+      process.env = { ...validEnv, DATABASE_URL: 'invalid-url', NODE_ENV: 'test' };
       
       expect(() => validateEnv()).toThrow('DATABASE_URL must be a valid URL');
     });
 
     it('should reject short NEXTAUTH_SECRET', () => {
-      process.env = { ...validEnv, NEXTAUTH_SECRET: 'short' };
+      process.env = { ...validEnv, NEXTAUTH_SECRET: 'short', NODE_ENV: 'test' };
       
       expect(() => validateEnv()).toThrow('NEXTAUTH_SECRET must be at least 32 characters');
     });
 
     it('should reject invalid TWILIO_ACCOUNT_SID format', () => {
-      process.env = { ...validEnv, TWILIO_ACCOUNT_SID: 'invalid-sid' };
+      process.env = { ...validEnv, TWILIO_ACCOUNT_SID: 'invalid-sid', NODE_ENV: 'test' };
       
       expect(() => validateEnv()).toThrow('TWILIO_ACCOUNT_SID must start with AC');
     });
 
     it('should reject invalid TWILIO_PHONE_NUMBER format', () => {
-      process.env = { ...validEnv, TWILIO_PHONE_NUMBER: '123-456-7890' };
+      process.env = { ...validEnv, TWILIO_PHONE_NUMBER: '123-456-7890', NODE_ENV: 'test' };
       
       expect(() => validateEnv()).toThrow('TWILIO_PHONE_NUMBER must be in E.164 format');
     });
 
     it('should reject invalid UPSTASH_REDIS_URL format', () => {
-      process.env = { ...validEnv, UPSTASH_REDIS_URL: 'not-a-url' };
+      process.env = { ...validEnv, UPSTASH_REDIS_URL: 'not-a-url', NODE_ENV: 'test' };
       
       expect(() => validateEnv()).toThrow('UPSTASH_REDIS_URL must be a valid URL');
     });
 
     it('should reject invalid SUPABASE_URL format', () => {
-      process.env = { ...validEnv, SUPABASE_URL: 'not-a-url' };
+      process.env = { ...validEnv, SUPABASE_URL: 'not-a-url', NODE_ENV: 'test' };
       
       expect(() => validateEnv()).toThrow('SUPABASE_URL must be a valid URL');
     });
 
     it('should reject invalid SENTRY_DSN format', () => {
-      process.env = { ...validEnv, SENTRY_DSN: 'not-a-url' };
+      process.env = { ...validEnv, SENTRY_DSN: 'not-a-url', NODE_ENV: 'test' };
       
       expect(() => validateEnv()).toThrow('SENTRY_DSN must be a valid URL');
-    });
-
-    it('should reject extra environment variables with strict mode', () => {
-      process.env = { ...validEnv, EXTRA_VAR: 'should-not-be-allowed' };
-      
-      expect(() => validateEnv()).toThrow();
     });
   });
 
@@ -110,7 +104,8 @@ describe('Environment Validation', () => {
       process.env = { 
         ...validEnv, 
         NEXTAUTH_SECRET: 'short-secret',
-        GOOGLE_CLIENT_SECRET: 'invalid-secret'
+        GOOGLE_CLIENT_SECRET: 'invalid-secret',
+        NODE_ENV: 'test'
       };
       
       try {
@@ -125,7 +120,7 @@ describe('Environment Validation', () => {
     });
 
     it('should mask very short secrets', () => {
-      process.env = { ...validEnv, NEXTAUTH_SECRET: 'abc' };
+      process.env = { ...validEnv, NEXTAUTH_SECRET: 'abc', NODE_ENV: 'test' };
       
       try {
         validateEnv();

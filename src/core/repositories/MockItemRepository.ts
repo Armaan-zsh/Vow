@@ -1,4 +1,22 @@
-import { IItemRepository, SearchFilters, PaginationOptions, PaginatedResult } from './IItemRepository';
+import { IItemRepository } from './IItemRepository';
+
+export interface SearchFilters {
+  type?: ItemType;
+  status?: ReadingStatus;
+  rating?: number;
+  publishedYear?: number;
+  hasNotes?: boolean;
+}
+
+export interface PaginationOptions {
+  limit: number;
+  cursor?: string;
+}
+
+export interface PaginatedResult<T> {
+  items: T[];
+  nextCursor: string | null;
+}
 import { Item, ItemId, ItemType, ReadingStatus } from '../entities/Item';
 import { UserId } from '../entities/User';
 
