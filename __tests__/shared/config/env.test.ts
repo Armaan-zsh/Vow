@@ -17,7 +17,8 @@ describe('Environment Validation', () => {
     SUPABASE_URL: 'https://project.supabase.co',
     SUPABASE_SERVICE_ROLE_KEY: 'supabase-service-key',
     SENTRY_DSN: 'https://key@sentry.io/project',
-    POSTHOG_KEY: 'posthog-key'
+    POSTHOG_KEY: 'posthog-key',
+    NODE_ENV: 'test' as const
   };
 
   beforeEach(() => {
@@ -42,7 +43,7 @@ describe('Environment Validation', () => {
 
   describe('Invalid Configuration', () => {
     it('should throw EnvValidationError for missing required variables', () => {
-      process.env = {};
+      process.env = { NODE_ENV: 'test' };
       
       expect(() => validateEnv()).toThrow(EnvValidationError);
       
