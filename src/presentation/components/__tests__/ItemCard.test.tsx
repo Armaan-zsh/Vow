@@ -31,7 +31,7 @@ describe('ItemCard', () => {
     it('should be keyboard accessible', () => {
       render(<ItemCard item={mockItem} variant="grid" onEdit={mockOnEdit} />);
       
-      const card = screen.getByRole('button');
+      const card = screen.getByLabelText('Edit Test Book by Test Author');
       card.focus();
       fireEvent.keyDown(card, { key: 'Enter' });
       
@@ -56,14 +56,14 @@ describe('ItemCard', () => {
     it('should render grid variant correctly', () => {
       render(<ItemCard item={mockItem} variant="grid" onEdit={mockOnEdit} />);
       
-      const card = screen.getByRole('button');
+      const card = screen.getByLabelText('Edit Test Book by Test Author');
       expect(card).toHaveClass('w-[200px]', 'h-[300px]');
     });
 
     it('should render list variant correctly', () => {
       render(<ItemCard item={mockItem} variant="list" onEdit={mockOnEdit} />);
       
-      const card = screen.getByRole('button');
+      const card = screen.getByLabelText('Edit Test Book by Test Author');
       expect(card).toHaveClass('w-full', 'h-[120px]', 'flex');
     });
   });
@@ -89,13 +89,15 @@ describe('ItemCard', () => {
       const itemWithoutCover = { ...mockItem, coverImage: undefined };
       render(<ItemCard item={itemWithoutCover} variant="grid" onEdit={mockOnEdit} />);
       
+      expect(screen.getByTestId('fallback-icon')).toBeInTheDocument();
       expect(screen.getByText('📚')).toBeInTheDocument();
     });
 
     it('should display correct type colors and icons', () => {
-      const paperItem = { ...mockItem, type: 'PAPER' as const };
+      const paperItem = { ...mockItem, type: 'PAPER' as const, coverImage: undefined };
       render(<ItemCard item={paperItem} variant="grid" onEdit={mockOnEdit} />);
       
+      expect(screen.getByTestId('fallback-icon')).toBeInTheDocument();
       expect(screen.getByText('📄')).toBeInTheDocument();
       expect(screen.getByText('PAPER')).toBeInTheDocument();
     });
@@ -105,7 +107,7 @@ describe('ItemCard', () => {
     it('should call onEdit when card is clicked', () => {
       render(<ItemCard item={mockItem} variant="grid" onEdit={mockOnEdit} />);
       
-      fireEvent.click(screen.getByRole('button'));
+      fireEvent.click(screen.getByLabelText('Edit Test Book by Test Author'));
       expect(mockOnEdit).toHaveBeenCalledTimes(1);
     });
 

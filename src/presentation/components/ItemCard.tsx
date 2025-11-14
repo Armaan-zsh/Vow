@@ -59,6 +59,7 @@ export function ItemCard({ item, variant, onEdit }: ItemCardProps) {
           <div 
             className="w-full h-full flex items-center justify-center text-4xl font-black"
             style={{ backgroundColor: typeColors[item.type] }}
+            data-testid="fallback-icon"
           >
             {typeIcons[item.type]}
           </div>
