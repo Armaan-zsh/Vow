@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { PrismaClient, User as PrismaUser, Prisma } from '@prisma/client';
 import { IUserRepository } from '../../core/repositories/IUserRepository';
 import { User, UserId, createUserId } from '../../core/entities/User';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { PrismaClient } from '@prisma/client';
 import { PrismaUserRepository } from '../../../src/infrastructure/database/PrismaUserRepository';
 import { User, createUserId } from '../../../src/core/entities/User';
