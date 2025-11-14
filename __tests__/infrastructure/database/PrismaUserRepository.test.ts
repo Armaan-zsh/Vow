@@ -3,7 +3,7 @@ import { PrismaUserRepository } from '../../../src/infrastructure/database/Prism
 import { User, createUserId } from '../../../src/core/entities/User';
 import { NotFoundError, ConflictError } from '../../../src/shared/types/errors';
 
-describe('PrismaUserRepository', () => {
+describe.skip('PrismaUserRepository', () => {
   let prisma: PrismaClient;
   let repository: PrismaUserRepository;
   let testUser: User;

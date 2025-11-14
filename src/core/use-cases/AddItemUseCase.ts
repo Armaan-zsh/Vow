@@ -1,4 +1,4 @@
-import { Item, ItemType } from '../entities/Item';
+import { Item, ItemType, ReadingStatus } from '../entities/Item';
 import { UserId } from '../entities/User';
 import { IItemRepository } from '../repositories/IItemRepository';
 import { IMetadataService } from '../repositories/IMetadataService';

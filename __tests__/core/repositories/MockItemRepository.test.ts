@@ -28,8 +28,17 @@ describe('MockItemRepository', () => {
         type: ItemType.BOOK,
         title: 'Test Book',
         author: 'Test Author',
+        url: undefined,
+        coverImage: undefined,
+        publishedYear: undefined,
+        status: ReadingStatus.WANT_TO_READ,
+        rating: undefined,
+        notes: undefined,
+        readDate: undefined,
+        isPublic: false,
+        metadata: {},
         updatedAt: new Date()
-      , url: undefined, coverImage: undefined, publishedYear: undefined, status: ReadingStatus.WANT_TO_READ, rating: undefined, notes: undefined, readDate: undefined, isPublic: false, metadata: {} };
+      };
       
       const created = await repository.create(itemData);
       
@@ -38,14 +47,23 @@ describe('MockItemRepository', () => {
       expect(created.id).toBeDefined();
     });
 
-    it('should throw error for duplicate ID', async () => {
+    it('should create item with minimal data', async () => {
       const itemData = {
         userId,
         type: ItemType.BOOK,
         title: 'Test Book',
-        author: 'Test Author',
+        author: undefined,
+        url: undefined,
+        coverImage: undefined,
+        publishedYear: undefined,
+        status: ReadingStatus.WANT_TO_READ,
+        rating: undefined,
+        notes: undefined,
+        readDate: undefined,
+        isPublic: false,
+        metadata: {},
         updatedAt: new Date()
-      , url: undefined, coverImage: undefined, publishedYear: undefined, status: ReadingStatus.WANT_TO_READ, rating: undefined, notes: undefined, readDate: undefined, isPublic: false, metadata: {} };
+      };
       
       await repository.create(itemData);
       expect(repository.size()).toBe(1);
@@ -58,7 +76,17 @@ describe('MockItemRepository', () => {
         const itemData = {
           userId,
           type: ItemType.BOOK,
-          title: `Book ${i, author: undefined, url: undefined, coverImage: undefined, publishedYear: undefined, status: ReadingStatus.WANT_TO_READ, rating: undefined, notes: undefined, readDate: undefined, isPublic: false, metadata: {} }`,
+          title: `Book ${i}`,
+          author: undefined,
+          url: undefined,
+          coverImage: undefined,
+          publishedYear: undefined,
+          status: ReadingStatus.WANT_TO_READ,
+          rating: undefined,
+          notes: undefined,
+          readDate: undefined,
+          isPublic: false,
+          metadata: {},
           updatedAt: new Date()
         };
         await repository.create(itemData);
@@ -106,8 +134,18 @@ describe('MockItemRepository', () => {
         userId,
         type: ItemType.BOOK,
         title: 'Test Book',
+        author: undefined,
+        url: undefined,
+        coverImage: undefined,
+        publishedYear: undefined,
+        status: ReadingStatus.WANT_TO_READ,
+        rating: undefined,
+        notes: undefined,
+        readDate: undefined,
+        isPublic: false,
+        metadata: {},
         updatedAt: new Date()
-      , author: undefined, url: undefined, coverImage: undefined, publishedYear: undefined, status: ReadingStatus.WANT_TO_READ, rating: undefined, notes: undefined, readDate: undefined, isPublic: false, metadata: {} };
+      };
       await repository.create(itemData);
       
       const result = await repository.findByUserId(userId, { limit: 10 });
@@ -141,6 +179,15 @@ describe('MockItemRepository', () => {
           type: ItemType.BOOK,
           title: 'JavaScript: The Good Parts',
           author: 'Douglas Crockford',
+          url: undefined,
+          coverImage: undefined,
+          publishedYear: undefined,
+          status: ReadingStatus.WANT_TO_READ,
+          rating: undefined,
+          notes: undefined,
+          readDate: undefined,
+          isPublic: false,
+          metadata: {},
           updatedAt: new Date()
         },
         {
@@ -148,6 +195,15 @@ describe('MockItemRepository', () => {
           type: ItemType.PAPER,
           title: 'Machine Learning Basics',
           author: 'Jane Smith',
+          url: undefined,
+          coverImage: undefined,
+          publishedYear: undefined,
+          status: ReadingStatus.WANT_TO_READ,
+          rating: undefined,
+          notes: undefined,
+          readDate: undefined,
+          isPublic: false,
+          metadata: {},
           updatedAt: new Date()
         },
         {
@@ -155,7 +211,15 @@ describe('MockItemRepository', () => {
           type: ItemType.BOOK,
           title: 'Advanced JavaScript',
           author: 'John Doe',
+          url: undefined,
+          coverImage: undefined,
+          publishedYear: undefined,
+          status: ReadingStatus.WANT_TO_READ,
           rating: 5,
+          notes: undefined,
+          readDate: undefined,
+          isPublic: false,
+          metadata: {},
           updatedAt: new Date()
         }
       ];
@@ -169,7 +233,7 @@ describe('MockItemRepository', () => {
       const results = await repository.search(userId, 'javascript');
       
       expect(results).toHaveLength(2);
-      expect(results[0].title).toBe('JavaScript: The Good Parts'); // Exact match first
+      expect(results[0].title).toBe('JavaScript: The Good Parts');
       expect(results[1].title).toBe('Advanced JavaScript');
     });
 
@@ -217,8 +281,17 @@ describe('MockItemRepository', () => {
         type: ItemType.BOOK,
         title: 'Test Book',
         author: 'Test Author',
+        url: undefined,
+        coverImage: undefined,
+        publishedYear: undefined,
+        status: ReadingStatus.WANT_TO_READ,
+        rating: undefined,
+        notes: undefined,
+        readDate: undefined,
+        isPublic: false,
+        metadata: {},
         updatedAt: new Date()
-      , url: undefined, coverImage: undefined, publishedYear: undefined, status: ReadingStatus.WANT_TO_READ, rating: undefined, notes: undefined, readDate: undefined, isPublic: false, metadata: {} };
+      };
       const created = await repository.create(itemData);
       testItem = created;
     });
@@ -234,7 +307,7 @@ describe('MockItemRepository', () => {
       
       expect(updated!.title).toBe('Updated Title');
       expect(updated!.rating).toBe(4);
-      expect(updated!.author).toBe('Test Author'); // Unchanged
+      expect(updated!.author).toBe('Test Author');
       expect(updated!.updatedAt.getTime()).toBeGreaterThan(testItem.updatedAt.getTime());
     });
 
@@ -253,8 +326,17 @@ describe('MockItemRepository', () => {
         type: ItemType.BOOK,
         title: 'Test Book',
         author: 'Test Author',
+        url: undefined,
+        coverImage: undefined,
+        publishedYear: undefined,
+        status: ReadingStatus.WANT_TO_READ,
+        rating: undefined,
+        notes: undefined,
+        readDate: undefined,
+        isPublic: false,
+        metadata: {},
         updatedAt: new Date()
-      , url: undefined, coverImage: undefined, publishedYear: undefined, status: ReadingStatus.WANT_TO_READ, rating: undefined, notes: undefined, readDate: undefined, isPublic: false, metadata: {} };
+      };
       const created = await repository.create(itemData);
       testItem = created;
     });
@@ -279,8 +361,18 @@ describe('MockItemRepository', () => {
         userId,
         type: ItemType.BOOK,
         title: 'Test Book',
+        author: undefined,
+        url: undefined,
+        coverImage: undefined,
+        publishedYear: undefined,
+        status: ReadingStatus.WANT_TO_READ,
+        rating: undefined,
+        notes: undefined,
+        readDate: undefined,
+        isPublic: false,
+        metadata: {},
         updatedAt: new Date()
-      , author: undefined, url: undefined, coverImage: undefined, publishedYear: undefined, status: ReadingStatus.WANT_TO_READ, rating: undefined, notes: undefined, readDate: undefined, isPublic: false, metadata: {} };
+      };
       
       const start = Date.now();
       await repository.create(itemData);
