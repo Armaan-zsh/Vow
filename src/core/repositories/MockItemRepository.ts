@@ -9,6 +9,11 @@ import { UserId } from '../entities/User';
 export class MockItemRepository implements IItemRepository {
   private items = new Map<string, Item>();
 
+  async findById(id: ItemId): Promise<Item | null> {
+    await this.simulateLatency();
+    return this.items.get(id) || null;
+  }
+
   async create(item: Omit<Item, 'id' | 'addedAt'>): Promise<Item> {
     await this.simulateLatency();
     

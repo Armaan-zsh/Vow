@@ -9,10 +9,10 @@ export enum ItemType {
 }
 
 export enum ReadingStatus {
-  WANT_TO_READ = 'WANT_TO_READ',
-  READING = 'READING',
+  WANT_TO_READ = 'want-to-read',
+  READING = 'reading',
   READ = 'READ',
-  SKIMMED = 'SKIMMED'
+  SKIMMED = 'skimmed'
 }
 
 export interface ItemConstructorProps {

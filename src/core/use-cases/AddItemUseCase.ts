@@ -65,7 +65,7 @@ export class AddItemUseCase {
       url: undefined,
       coverImage: undefined,
       publishedYear: undefined,
-      status: 'want-to-read' as const,
+      status: ReadingStatus.WANT_TO_READ,
       rating: undefined,
       notes: undefined,
       readDate: undefined,
