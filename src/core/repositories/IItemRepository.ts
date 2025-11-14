@@ -21,10 +21,11 @@ export interface SearchFilters {
 }
 
 export interface IItemRepository {
-  create(item: Item): Promise<void>;
+  create(item: Omit<Item, 'id' | 'addedAt'>): Promise<Item>;
   findById(id: ItemId): Promise<Item | null>;
   findByUserId(userId: UserId, options: PaginationOptions): Promise<PaginatedResult<Item>>;
   search(userId: UserId, query: string, filters?: SearchFilters): Promise<Item[]>;
   update(id: ItemId, data: Partial<Omit<Item, 'id' | 'userId' | 'addedAt'>>): Promise<void>;
   delete(id: ItemId): Promise<void>;
+  countByUserInTimeWindow(userId: UserId, windowMs: number): Promise<number>;
 }

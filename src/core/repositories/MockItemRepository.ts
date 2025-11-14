@@ -1,22 +1,4 @@
-import { IItemRepository } from './IItemRepository';
-
-export interface SearchFilters {
-  type?: ItemType;
-  status?: ReadingStatus;
-  rating?: number;
-  publishedYear?: number;
-  hasNotes?: boolean;
-}
-
-export interface PaginationOptions {
-  limit: number;
-  cursor?: string;
-}
-
-export interface PaginatedResult<T> {
-  items: T[];
-  nextCursor: string | null;
-}
+import { IItemRepository, SearchFilters, PaginationOptions, PaginatedResult } from './IItemRepository';
 import { Item, ItemId, ItemType, ReadingStatus } from '../entities/Item';
 import { UserId } from '../entities/User';
 
@@ -27,14 +9,18 @@ import { UserId } from '../entities/User';
 export class MockItemRepository implements IItemRepository {
   private items = new Map<string, Item>();
 
-  async create(item: Item): Promise<void> {
+  async create(item: Omit<Item, 'id' | 'addedAt'>): Promise<Item> {
     await this.simulateLatency();
     
-    if (this.items.has(item.id)) {
-      throw new Error(`Item with id '${item.id}' already exists`);
-    }
-
-    this.items.set(item.id, item);
+    const newItem = new Item({
+      ...item,
+      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as ItemId,
+      addedAt: new Date(),
+      updatedAt: new Date()
+    });
+    
+    this.items.set(newItem.id, newItem);
+    return newItem;
   }
 
   async findByUserId(userId: UserId, options: PaginationOptions): Promise<PaginatedResult<Item>> {
@@ -73,7 +59,8 @@ export class MockItemRepository implements IItemRepository {
 
     return {
       items: pageItems,
-      nextCursor
+      nextCursor,
+      hasNextPage: nextCursor !== null
     };
   }
 
@@ -189,6 +176,15 @@ export class MockItemRepository implements IItemRepository {
 
   getAllItems(): Item[] {
     return Array.from(this.items.values());
+  }
+
+  async countByUserInTimeWindow(userId: UserId, windowMs: number): Promise<number> {
+    await this.simulateLatency();
+    
+    const cutoff = new Date(Date.now() - windowMs);
+    return Array.from(this.items.values())
+      .filter(item => item.userId === userId && item.addedAt >= cutoff)
+      .length;
   }
 
   private async simulateLatency(): Promise<void> {

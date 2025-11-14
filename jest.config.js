@@ -8,9 +8,6 @@ const customConfig = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   testEnvironment: 'jest-environment-jsdom',
-  testEnvironmentOptions: {
-    customExportConditions: [''],
-  },
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',

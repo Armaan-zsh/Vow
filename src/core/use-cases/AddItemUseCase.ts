@@ -1,7 +1,15 @@
-import { AddItemRequest, Item, ItemType } from '../../shared/types';
+import { Item, ItemType } from '../entities/Item';
+import { UserId } from '../entities/User';
 import { IItemRepository } from '../repositories/IItemRepository';
 import { IMetadataService } from '../repositories/IMetadataService';
 import { IEventEmitter } from '../repositories/IEventEmitter';
+
+export interface AddItemRequest {
+  userId: UserId;
+  title: string;
+  type: ItemType;
+  metadata?: Record<string, any>;
+}
 
 export class RateLimitError extends Error {
   constructor() {
@@ -53,7 +61,17 @@ export class AddItemUseCase {
       userId: request.userId,
       title: request.title,
       type: request.type,
-      metadata: enrichedMetadata
+      author: undefined,
+      url: undefined,
+      coverImage: undefined,
+      publishedYear: undefined,
+      status: 'want-to-read' as const,
+      rating: undefined,
+      notes: undefined,
+      readDate: undefined,
+      isPublic: false,
+      metadata: enrichedMetadata,
+      updatedAt: new Date()
     });
 
     // Emit event
