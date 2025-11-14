@@ -1,0 +1,284 @@
+// schema.prisma
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["views", "relationJoins"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+
+// ==========================================
+// CORE ENTITIES (AI-Proof Business Logic)
+// ==========================================
+
+model User {
+  id String @id @default(cuid())
+  username String @unique @db.VarChar(39) // Twitter-style limit
+  email String? @unique
+  phone String? @unique
+  name String? @db.VarChar(100)
+  
+  // Privacy & Security
+  profileVisibility ProfileVisibility @default(PUBLIC)
+  isVerified Boolean @default(false)
+  mfaEnabled Boolean @default(false)
+  lastLoginAt DateTime?
+  loginCount Int @default(0)
+  failedLogins Int @default(0) // For rate limiting in Redis, not DB
+  
+  // Content stats (denormalized for performance)
+  totalItems Int @default(0)
+  booksCount Int @default(0)
+  papersCount Int @default(0)
+  articlesCount Int @default(0)
+  streakDays Int @default(0)
+  lastReadDate DateTime?
+  
+  // Relations
+  items Item[]
+  interests UserInterest[]
+  followers Follow[] @relation("Following")
+  following Follow[] @relation("Follower")
+  accounts Account[]
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Indexes
+  @@index([username, email])
+  @@index([createdAt])
+  
+  // RLS Policy: Users can read their own profile and public profiles
+  // CREATE POLICY "Users can read profiles" ON "User"
+  //   FOR SELECT USING (
+  //     "id" = current_setting('app.current_user_id')::text OR
+  //     "profileVisibility" = 'PUBLIC'
+  //   );
+}
+
+model Item {
+  id String @id @default(cuid())
+  userId String
+  type ItemType
+  
+  // Core metadata (agnostic of type)
+  title String @db.VarChar(500)
+  author String? @db.VarChar(500) // Comma-separated for multiple
+  url String? @db.Text
+  coverImage String? @db.Text // Cloudinary URL
+  publishedYear Int?
+  
+  // User context
+  status ReadingStatus @default(READ)
+  rating Int? // Range 1-5 enforced in use-case layer
+  notes String? @db.Text // Max 5000 chars enforced in use-case
+  readDate DateTime?
+  addedAt DateTime @default(now())
+  
+  // Discovery
+  isPublic Boolean @default(true)
+  viewCount Int @default(0)
+  tags ItemTag[]
+  
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Type-specific data (JSONB for flexibility)
+  metadata Json @default("{}") // {isbn: "...", doi: "...", journal: "..."}
+  
+  // Vector for semantic search (future-proof)
+  embedding Unsupported("vector(1536)")?
+  
+  // Indexes
+  @@index([userId, addedAt(sort: Desc)])
+  @@index([userId, type])
+  @@index([title(ops: raw("gin_trgm_ops"))]) // Trigram search
+  @@index([embedding], type: Gin) // For vector similarity
+  
+  // RLS Policy: Users can read their own items and public items
+  // CREATE POLICY "Users can read items" ON "Item"
+  //   FOR SELECT USING (
+  //     "userId" = current_setting('app.current_user_id')::text OR
+  //     ("isPublic" = true AND EXISTS (
+  //       SELECT 1 FROM "User" WHERE "id" = "Item"."userId" 
+  //       AND "profileVisibility" IN ('PUBLIC', 'UNLISTED')
+  //     ))
+  //   );
+}
+
+// ==========================================
+// TAGS & INTERESTS (Normalized for Scale)
+// ==========================================
+
+model Tag {
+  id String @id @default(cuid())
+  name String @db.VarChar(50)
+  slug String @db.VarChar(50)
+  color String @default("#3B82F6") @db.VarChar(7)
+  userId String // Tags are user-specific
+  
+  items ItemTag[]
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, slug])
+  @@index([userId])
+  
+  // RLS Policy: Users can only access their own tags
+  // CREATE POLICY "Users can access own tags" ON "Tag"
+  //   FOR ALL USING ("userId" = current_setting('app.current_user_id')::text);
+}
+
+model ItemTag {
+  itemId String
+  tagId String
+  
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tag Tag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  
+  @@id([itemId, tagId])
+  @@index([itemId])
+  @@index([tagId])
+  
+  // RLS Policy: Inherits from Item and Tag policies
+  // CREATE POLICY "Users can access item tags" ON "ItemTag"
+  //   FOR ALL USING (
+  //     EXISTS (SELECT 1 FROM "Item" WHERE "id" = "ItemTag"."itemId") AND
+  //     EXISTS (SELECT 1 FROM "Tag" WHERE "id" = "ItemTag"."tagId")
+  //   );
+}
+
+model Interest {
+  id String @id @default(cuid())
+  name String @unique
+  slug String @unique
+  category String // "academic", "fiction", "tech"
+  
+  users UserInterest[]
+  
+  @@index([category])
+  
+  // RLS Policy: Interests are public for discovery
+  // CREATE POLICY "Interests are public" ON "Interest"
+  //   FOR SELECT USING (true);
+}
+
+model UserInterest {
+  userId String
+  interestId String
+  createdAt DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interest Interest @relation(fields: [interestId], references: [id], onDelete: Cascade)
+  
+  @@id([userId, interestId])
+  @@index([userId])
+  @@index([interestId])
+  
+  // RLS Policy: Users can manage their own interests
+  // CREATE POLICY "Users can manage own interests" ON "UserInterest"
+  //   FOR ALL USING ("userId" = current_setting('app.current_user_id')::text);
+}
+
+// ==========================================
+// SOCIAL GRAPH (Scalable Following)
+// ==========================================
+
+model Follow {
+  followerId String
+  followingId String
+  createdAt DateTime @default(now())
+  
+  follower User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  
+  @@id([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  
+  // RLS Policy: Users can see follows involving them or public profiles
+  // CREATE POLICY "Users can see relevant follows" ON "Follow"
+  //   FOR SELECT USING (
+  //     "followerId" = current_setting('app.current_user_id')::text OR
+  //     "followingId" = current_setting('app.current_user_id')::text OR
+  //     EXISTS (SELECT 1 FROM "User" WHERE "id" = "Follow"."followingId" AND "profileVisibility" = 'PUBLIC')
+  //   );
+}
+
+// ==========================================
+// AUTH SYSTEM (NextAuth.js Integration)
+// ==========================================
+
+model Account {
+  id String @id @default(cuid())
+  userId String
+  type String
+  provider String
+  providerAccountId String
+  refresh_token String? @db.Text
+  access_token String? @db.Text
+  expires_at Int?
+  token_type String?
+  scope String?
+  id_token String? @db.Text
+  session_state String?
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  
+  // RLS Policy: Users can only access their own accounts
+  // CREATE POLICY "Users can access own accounts" ON "Account"
+  //   FOR ALL USING ("userId" = current_setting('app.current_user_id')::text);
+}
+
+// ==========================================
+// AUDIT LOG (GDPR Compliance & Debug)
+// ==========================================
+
+model AuditLog {
+  id String @id @default(cuid())
+  userId String
+  action String @db.VarChar(50) // "ITEM_CREATED", "PROFILE_UPDATED"
+  entityType String @db.VarChar(20) // "Item", "User"
+  entityId String
+  ipAddress String? @db.VarChar(45) // IPv6 support
+  userAgent String? @db.Text
+  createdAt DateTime @default(now())
+  
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([entityType, entityId])
+  
+  // RLS Policy: Users can only read their own audit logs, admins can read all
+  // CREATE POLICY "Users can read own audit logs" ON "AuditLog"
+  //   FOR SELECT USING (
+  //     "userId" = current_setting('app.current_user_id')::text OR
+  //     current_setting('app.user_role')::text = 'admin'
+  //   );
+}
+
+// ==========================================
+// ENUMS
+// ==========================================
+
+enum ItemType { 
+  BOOK 
+  PAPER 
+  ARTICLE 
+}
+
+enum ReadingStatus { 
+  WANT_TO_READ 
+  READING 
+  READ 
+  SKIMMED 
+}
+
+enum ProfileVisibility { 
+  PUBLIC 
+  UNLISTED 
+  PRIVATE 
+}
