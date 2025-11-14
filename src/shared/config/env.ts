@@ -92,5 +92,5 @@ export function validateEnv(): Env {
   }
 }
 
-// Export validated environment variables
-export const env = validateEnv();
+// Export validated environment variables (skip during tests)
+export const env = process.env.NODE_ENV === 'test' ? undefined as any : validateEnv();
