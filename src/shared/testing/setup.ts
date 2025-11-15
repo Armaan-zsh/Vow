@@ -34,7 +34,7 @@ globalThis.ResizeObserver = class {
 } as any;
 
 // FIX 2: Use React 18 act globally to prevent deprecation warnings
-globalThis.act = act;
+(globalThis as any).act = act;
 
 // FIX 3: FRAMER MOTION AUTO-MOCK - prevents whileHover/whileTap warnings
 jest.mock('framer-motion', () => ({

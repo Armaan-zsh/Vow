@@ -1,7 +1,8 @@
-import { SearchItemsUseCase, SearchItemsDTO, SortBy } from '../../../src/core/use-cases/SearchItemsUseCase';
+import { SearchItemsUseCase, SortBy } from '../../../src/core/use-cases/SearchItemsUseCase';
 import { MockItemRepository } from '../../../src/core/repositories/MockItemRepository';
 import { ItemType, ReadingStatus } from '../../../src/core/entities/Item';
 import { createUserId } from '../../../src/core/entities/User';
+import { createSearchItemsDTO } from '../../../src/shared/testing/factories';
 
 describe('SearchItemsUseCase Performance', () => {
   let useCase: SearchItemsUseCase;
@@ -56,11 +57,11 @@ describe('SearchItemsUseCase Performance', () => {
     });
 
     it('should search 10k items in under 200ms', async () => {
-      const input: SearchItemsDTO = {
+      const input = createSearchItemsDTO({
         userId: mockUserId,
         query: 'Test Book',
         limit: 20
-      };
+      });
 
       const startTime = Date.now();
       const result = await useCase.execute(input);
@@ -75,11 +76,11 @@ describe('SearchItemsUseCase Performance', () => {
     });
 
     it('should handle fuzzy search efficiently', async () => {
-      const input: SearchItemsDTO = {
+      const input = createSearchItemsDTO({
         userId: mockUserId,
         query: 'Shakespear', // typo
         limit: 20
-      };
+      });
 
       const startTime = Date.now();
       const result = await useCase.execute(input);
@@ -92,7 +93,7 @@ describe('SearchItemsUseCase Performance', () => {
     });
 
     it('should handle complex filtering efficiently', async () => {
-      const input: SearchItemsDTO = {
+      const input = createSearchItemsDTO({
         userId: mockUserId,
         query: 'Book',
         type: ItemType.BOOK,
@@ -101,7 +102,7 @@ describe('SearchItemsUseCase Performance', () => {
         tags: ['fiction'],
         sortBy: SortBy.READ_DATE,
         limit: 20
-      };
+      });
 
       const startTime = Date.now();
       const result = await useCase.execute(input);
@@ -114,11 +115,11 @@ describe('SearchItemsUseCase Performance', () => {
     });
 
     it('should handle pagination efficiently', async () => {
-      const input: SearchItemsDTO = {
+      const input = createSearchItemsDTO({
         userId: mockUserId,
         query: 'Test',
         limit: 10
-      };
+      });
 
       // First page
       const startTime1 = Date.now();
@@ -129,10 +130,10 @@ describe('SearchItemsUseCase Performance', () => {
       expect(page1.hasNextPage).toBe(true);
 
       // Second page with cursor
-      const input2: SearchItemsDTO = {
+      const input2 = createSearchItemsDTO({
         ...input,
         cursor: page1.nextCursor
-      };
+      });
 
       const startTime2 = Date.now();
       const page2 = await useCase.execute(input2);
@@ -146,12 +147,12 @@ describe('SearchItemsUseCase Performance', () => {
     });
 
     it('should maintain performance with relevance sorting', async () => {
-      const input: SearchItemsDTO = {
+      const input = createSearchItemsDTO({
         userId: mockUserId,
         query: 'Author 1',
         sortBy: SortBy.RELEVANCE,
         limit: 50
-      };
+      });
 
       const startTime = Date.now();
       const result = await useCase.execute(input);
@@ -173,11 +174,11 @@ describe('SearchItemsUseCase Performance', () => {
 
   describe('Memory Usage', () => {
     it('should not leak memory during repeated searches', async () => {
-      const input: SearchItemsDTO = {
+      const input = createSearchItemsDTO({
         userId: mockUserId,
         query: 'memory test',
         limit: 20
-      };
+      });
 
       // Create some test data
       for (let i = 0; i < 1000; i++) {
@@ -203,10 +204,10 @@ describe('SearchItemsUseCase Performance', () => {
 
       // Perform 100 searches
       for (let i = 0; i < 100; i++) {
-        await useCase.execute({
+        await useCase.execute(createSearchItemsDTO({
           ...input,
           query: `memory test ${i % 10}`
-        });
+        }));
       }
 
       const finalMemory = process.memoryUsage().heapUsed;
@@ -242,7 +243,7 @@ describe('SearchItemsUseCase Performance', () => {
         });
       }
 
-      const searches = Array(10).fill(null).map((_, i) => ({
+      const searches = Array(10).fill(null).map((_, i) => createSearchItemsDTO({
         userId: mockUserId,
         query: `Concurrent Test ${i}`,
         limit: 20

@@ -15,7 +15,7 @@ describe('Test Setup', () => {
   });
 
   it('should have React act available', () => {
-    expect(globalThis.act).toBeDefined();
+    expect((globalThis as any).act).toBeDefined();
   });
 
   it('should advance fake timers correctly', () => {

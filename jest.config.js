@@ -12,12 +12,7 @@ const config = {
   // FIX: Use global setup file
   setupFilesAfterEnv: ['<rootDir>/src/shared/testing/setup.ts'],
   
-  // FIX: Transform TypeScript files
-  transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
-      useESM: true,
-    }],
-  },
+
   
   // FIX: Bail on first failure to prevent cascading errors
   bail: 1,

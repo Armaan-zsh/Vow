@@ -327,12 +327,12 @@ export class SearchItemsUseCase {
     const params = [input.userId, input.query, `%${input.query}%`];
     
     if (input.type) params.push(input.type);
-    if (input.readDateFrom) params.push(input.readDateFrom);
-    if (input.readDateTo) params.push(input.readDateTo);
+    if (input.readDateFrom) params.push(input.readDateFrom.toISOString());
+    if (input.readDateTo) params.push(input.readDateTo.toISOString());
     if (input.tags) params.push(...input.tags);
     if (input.cursor) params.push(input.cursor);
     
-    params.push(input.limit);
+    params.push(input.limit.toString());
     return params;
   }
 

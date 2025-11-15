@@ -3,8 +3,14 @@ import { AddItemDTO } from '@/core/use-cases/AddItemUseCase';
 import { createUserId } from '@/core/entities/User';
 import { ItemType } from '@/core/entities/Item';
 
+// Fix: Make sortBy and limit optional in factory since they have defaults
+type SearchItemsDTOInput = Omit<SearchItemsDTO, 'sortBy' | 'limit'> & {
+  sortBy?: SortBy;
+  limit?: number;
+};
+
 // FIX: Factory ensures ALL required fields are present
-export const createSearchItemsDTO = (overrides: Partial<SearchItemsDTO> = {}): SearchItemsDTO => ({
+export const createSearchItemsDTO = (overrides: Partial<SearchItemsDTOInput> = {}): SearchItemsDTO => ({
   userId: createUserId('user_123'),
   query: 'test query',
   sortBy: SortBy.RELEVANCE,

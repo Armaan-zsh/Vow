@@ -15,7 +15,7 @@ beforeEach(() => {
   testUserRepo.clear();
   
   // FIX: Create default user needed by most tests
-  testUserRepo.create(createTestUser());
+  // testUserRepo.create(createTestUser());
 });
 
 afterEach(() => {
