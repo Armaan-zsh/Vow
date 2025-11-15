@@ -290,11 +290,11 @@ describe('ShareProfileUseCase', () => {
     });
 
     it('should use default expiresIn when not provided', async () => {
-      const input: ShareProfileDTO = {
+      const input = {
         userId: mockUserId,
         requestingUserId: mockRequestingUserId
         // expiresIn not provided, should default to 3600
-      };
+      } as ShareProfileDTO;
 
       const mockUser = {
         id: mockUserId,
