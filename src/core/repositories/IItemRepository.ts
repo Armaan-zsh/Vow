@@ -29,4 +29,6 @@ export interface IItemRepository {
   delete(id: ItemId): Promise<void>;
   countByUserInTimeWindow(userId: UserId, windowMs: number): Promise<number>;
   transaction<T>(fn: () => Promise<T>): Promise<T>;
+  searchWithRawQuery(userId: UserId, query: string, cursor?: string, limit?: number): Promise<any[]>;
+  executeRawQuery(query: string, params: any[]): Promise<any[]>;
 }

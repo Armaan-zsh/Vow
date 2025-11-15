@@ -129,7 +129,8 @@ export class AddItemUseCase {
 
   private validateInput(input: AddItemDTO): AddItemDTO {
     try {
-      return AddItemDTOSchema.parse(input);
+      const parsed = AddItemDTOSchema.parse(input);
+      return { ...parsed, userId: input.userId };
     } catch (error: any) {
       throw transformZodError(error);
     }

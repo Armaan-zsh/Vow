@@ -196,6 +196,92 @@ export class MockItemRepository implements IItemRepository {
     return await fn();
   }
 
+  async searchWithRawQuery(userId: UserId, query: string, cursor?: string, limit = 20): Promise<any[]> {
+    await this.simulateLatency();
+    
+    // Mock implementation - in real app this would use Prisma raw query
+    const normalizedQuery = query.toLowerCase();
+    let results = Array.from(this.items.values())
+      .filter(item => item.userId === userId)
+      .filter(item => {
+        const titleMatch = item.title.toLowerCase().includes(normalizedQuery);
+        const authorMatch = item.author?.toLowerCase().includes(normalizedQuery) || false;
+        const notesMatch = item.notes?.toLowerCase().includes(normalizedQuery) || false;
+        return titleMatch || authorMatch || notesMatch;
+      })
+      .map(item => ({
+        id: item.id,
+        title: item.title,
+        author: item.author,
+        type: item.type,
+        added_at: item.addedAt,
+        read_date: item.readDate,
+        notes: item.notes,
+        metadata: item.metadata,
+        title_similarity: this.calculateSimilarity(item.title, normalizedQuery),
+        author_similarity: this.calculateSimilarity(item.author || '', normalizedQuery)
+      }));
+
+    // Apply cursor pagination
+    if (cursor) {
+      const cursorIndex = results.findIndex(item => item.id === cursor);
+      if (cursorIndex >= 0) {
+        results = results.slice(cursorIndex + 1);
+      }
+    }
+
+    return results.slice(0, limit);
+  }
+
+  async executeRawQuery(query: string, params: any[]): Promise<any[]> {
+    await this.simulateLatency();
+    
+    // Mock count query result
+    if (query.includes('COUNT(*)')) {
+      const userId = params[0];
+      const searchQuery = params[1]?.toLowerCase() || '';
+      const count = Array.from(this.items.values())
+        .filter(item => item.userId === userId)
+        .filter(item => {
+          const titleMatch = item.title.toLowerCase().includes(searchQuery);
+          const authorMatch = item.author?.toLowerCase().includes(searchQuery) || false;
+          return titleMatch || authorMatch;
+        }).length;
+      
+      return [{ count: count.toString() }];
+    }
+    
+    return [];
+  }
+
+  private calculateSimilarity(text: string, query: string): number {
+    if (!text || !query) return 0;
+    
+    const textLower = text.toLowerCase();
+    const queryLower = query.toLowerCase();
+    
+    // Simple similarity calculation
+    if (textLower === queryLower) return 1;
+    if (textLower.includes(queryLower)) return 0.8;
+    if (textLower.startsWith(queryLower)) return 0.6;
+    
+    // Basic trigram-like matching
+    const textTrigrams = this.getTrigrams(textLower);
+    const queryTrigrams = this.getTrigrams(queryLower);
+    const intersection = textTrigrams.filter(t => queryTrigrams.includes(t));
+    
+    return intersection.length / Math.max(textTrigrams.length, queryTrigrams.length);
+  }
+
+  private getTrigrams(text: string): string[] {
+    const trigrams = [];
+    const padded = `  ${text}  `;
+    for (let i = 0; i < padded.length - 2; i++) {
+      trigrams.push(padded.slice(i, i + 3));
+    }
+    return trigrams;
+  }
+
   private async simulateLatency(): Promise<void> {
     const delay = Math.floor(Math.random() * 40) + 10; // 10-50ms
     await new Promise(resolve => setTimeout(resolve, delay));

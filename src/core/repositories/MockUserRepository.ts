@@ -79,7 +79,12 @@ export class MockUserRepository implements IUserRepository {
 
     const updatedStats = { ...user.stats };
     for (const [key, value] of Object.entries(increments)) {
-      updatedStats[key as keyof UserStats] = (updatedStats[key as keyof UserStats] || 0) + value;
+      const currentValue = updatedStats[key as keyof UserStats];
+      if (typeof currentValue === 'number') {
+        (updatedStats as any)[key] = currentValue + value;
+      } else {
+        (updatedStats as any)[key] = value;
+      }
     }
 
     await this.updateStats(userId, updatedStats);

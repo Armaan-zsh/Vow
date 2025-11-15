@@ -130,8 +130,14 @@ export function createUserId(id: string): UserId {
   return id as UserId;
 }
 
-// Static factory method
-User.create = function(props: Omit<UserConstructorProps, 'id'>) {
+// Extend User class with static method
+declare module './User' {
+  namespace User {
+    function create(props: Omit<UserConstructorProps, 'id'>): User;
+  }
+}
+
+(User as any).create = function(props: Omit<UserConstructorProps, 'id'>) {
   return new User({
     ...props,
     id: createUserId(`user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
