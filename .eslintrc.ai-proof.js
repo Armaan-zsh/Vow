@@ -45,5 +45,11 @@ module.exports = {
         '@typescript-eslint/no-explicit-any': 'off', // Allow mocks
       },
     },
+    {
+      files: ['src/shared/config/env.ts', 'app/api/**/*.ts', 'src/infrastructure/rate-limit/RateLimiter.ts'],
+      rules: {
+        'no-restricted-properties': 'off', // Allow process.env in config files
+      },
+    },
   ],
 };
