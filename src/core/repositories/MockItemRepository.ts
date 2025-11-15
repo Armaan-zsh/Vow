@@ -192,6 +192,10 @@ export class MockItemRepository implements IItemRepository {
       .length;
   }
 
+  async transaction<T>(fn: () => Promise<T>): Promise<T> {
+    return await fn();
+  }
+
   private async simulateLatency(): Promise<void> {
     const delay = Math.floor(Math.random() * 40) + 10; // 10-50ms
     await new Promise(resolve => setTimeout(resolve, delay));

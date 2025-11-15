@@ -71,6 +71,20 @@ export class MockUserRepository implements IUserRepository {
     this.users.set(userId, updatedUser);
   }
 
+  async incrementStats(userId: UserId, increments: Record<string, number>): Promise<void> {
+    const user = await this.findById(userId);
+    if (!user) {
+      throw new Error(`User with id '${userId}' not found`);
+    }
+
+    const updatedStats = { ...user.stats };
+    for (const [key, value] of Object.entries(increments)) {
+      updatedStats[key as keyof UserStats] = (updatedStats[key as keyof UserStats] || 0) + value;
+    }
+
+    await this.updateStats(userId, updatedStats);
+  }
+
   // Test helper methods
   clear(): void {
     this.users.clear();

@@ -7,7 +7,7 @@ import { RateLimitError, ValidationError } from '../../shared/types/errors';
 import { transformZodError } from '../../shared/types/errors';
 
 const AddItemDTOSchema = z.object({
-  userId: z.string().brand<'UserId'>(),
+  userId: z.string(),
   title: z.string().min(1, 'Title is required').max(500, 'Title too long'),
   type: z.nativeEnum(ItemType),
   author: z.string().max(200).optional(),
@@ -17,7 +17,7 @@ const AddItemDTOSchema = z.object({
   metadata: z.record(z.any()).optional()
 });
 
-export type AddItemDTO = z.infer<typeof AddItemDTOSchema>;
+export type AddItemDTO = z.infer<typeof AddItemDTOSchema> & { userId: UserId };
 
 export interface ItemDTO {
   id: ItemId;
@@ -69,7 +69,7 @@ export class AddItemUseCase {
 
     // Check rate limit
     const recentCount = await this.itemRepository.countByUserInTimeWindow(
-      validatedInput.userId,
+      validatedInput.userId as UserId,
       AddItemUseCase.RATE_WINDOW_MS
     );
     
@@ -81,7 +81,7 @@ export class AddItemUseCase {
     const result = await this.itemRepository.transaction(async () => {
       // Create item
       const item = await this.itemRepository.create({
-        userId: validatedInput.userId,
+        userId: validatedInput.userId as UserId,
         title: validatedInput.title,
         type: validatedInput.type,
         author: validatedInput.author,
@@ -98,7 +98,7 @@ export class AddItemUseCase {
       });
 
       // Update user stats (idempotent)
-      await this.userRepository.incrementStats(validatedInput.userId, {
+      await this.userRepository.incrementStats(validatedInput.userId as UserId, {
         totalItems: 1,
         [`${validatedInput.type.toLowerCase()}Count`]: 1
       });
@@ -110,7 +110,7 @@ export class AddItemUseCase {
     await this.scheduleMetadataFetch(result, validatedInput);
 
     // Audit log entry
-    await this.auditLogger.log('item.created', validatedInput.userId, {
+    await this.auditLogger.log('item.created', validatedInput.userId as UserId, {
       itemId: result.id,
       title: result.title,
       type: result.type
@@ -167,7 +167,7 @@ export class AddItemUseCase {
       url: item.url,
       status: item.status,
       isPublic: item.isPublic,
-      createdAt: item.createdAt,
+      createdAt: item.addedAt,
       updatedAt: item.updatedAt
     };
   }

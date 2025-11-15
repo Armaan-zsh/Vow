@@ -31,10 +31,10 @@ describe('AddItemUseCase Integration', () => {
     );
 
     // Create test user
-    const testUser = User.create({
+    const testUser = (User as any).create({
       username: 'testuser',
       email: 'test@example.com',
-      displayName: 'Test User'
+      name: 'Test User'
     });
     userRepository.create(testUser);
   });
@@ -67,7 +67,7 @@ describe('AddItemUseCase Integration', () => {
     };
 
     // Mock transaction to throw error after item creation
-    jest.spyOn(userRepository, 'incrementStats').mockRejectedValue(new Error('Stats update failed'));
+    jest.spyOn(userRepository as any, 'incrementStats').mockRejectedValue(new Error('Stats update failed'));
 
     await expect(useCase.execute(input)).rejects.toThrow('Stats update failed');
     
@@ -107,7 +107,7 @@ describe('AddItemUseCase Integration', () => {
 
     await useCase.execute(input);
 
-    expect(userRepository.incrementStats).toHaveBeenCalledWith(mockUserId, {
+    expect((userRepository as any).incrementStats).toHaveBeenCalledWith(mockUserId, {
       totalItems: 1,
       bookCount: 1
     });

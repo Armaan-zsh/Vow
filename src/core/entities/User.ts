@@ -129,3 +129,11 @@ export class User {
 export function createUserId(id: string): UserId {
   return id as UserId;
 }
+
+// Static factory method
+User.create = function(props: Omit<UserConstructorProps, 'id'>) {
+  return new User({
+    ...props,
+    id: createUserId(`user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
+  });
+};
