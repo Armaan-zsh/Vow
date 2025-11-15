@@ -56,65 +56,74 @@ interface OpenGraphData {
 }
 
 // Circuit breakers for external APIs
-const googleBooksBreaker = new CircuitBreaker(async (isbn: string) => {
-  return await ofetch<GoogleBooksResponse>(`https://www.googleapis.com/books/v1/volumes`, {
-    query: { q: `isbn:${isbn}` },
-    timeout: 10000
-  });
-}, {
-  timeout: 10000,
-  errorThresholdPercentage: 50,
-  resetTimeout: 30000
-});
-
-const crossRefBreaker = new CircuitBreaker(async (doi: string) => {
-  return await ofetch<CrossRefResponse>(`https://api.crossref.org/works/${doi}`, {
-    timeout: 10000
-  });
-}, {
-  timeout: 10000,
-  errorThresholdPercentage: 50,
-  resetTimeout: 30000
-});
-
-const urlScraperBreaker = new CircuitBreaker(async (url: string) => {
-  // Simple Open Graph scraper
-  const html = await ofetch<string>(url, {
+const googleBooksBreaker = new CircuitBreaker(
+  async (isbn: string) => {
+    return await ofetch<GoogleBooksResponse>(`https://www.googleapis.com/books/v1/volumes`, {
+      query: { q: `isbn:${isbn}` },
+      timeout: 10000,
+    });
+  },
+  {
     timeout: 10000,
-    headers: {
-      'User-Agent': 'ReadFlex-Bot/1.0'
-    }
-  });
+    errorThresholdPercentage: 50,
+    resetTimeout: 30000,
+  }
+);
 
-  const ogData: OpenGraphData = {};
-  
-  // Extract Open Graph tags
-  const titleMatch = html.match(/<meta property="og:title" content="([^"]*)"[^>]*>/i);
-  if (titleMatch) ogData.title = titleMatch[1];
+const crossRefBreaker = new CircuitBreaker(
+  async (doi: string) => {
+    return await ofetch<CrossRefResponse>(`https://api.crossref.org/works/${doi}`, {
+      timeout: 10000,
+    });
+  },
+  {
+    timeout: 10000,
+    errorThresholdPercentage: 50,
+    resetTimeout: 30000,
+  }
+);
 
-  const descMatch = html.match(/<meta property="og:description" content="([^"]*)"[^>]*>/i);
-  if (descMatch) ogData.description = descMatch[1];
+const urlScraperBreaker = new CircuitBreaker(
+  async (url: string) => {
+    // Simple Open Graph scraper
+    const html = await ofetch<string>(url, {
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'ReadFlex-Bot/1.0',
+      },
+    });
 
-  const imageMatch = html.match(/<meta property="og:image" content="([^"]*)"[^>]*>/i);
-  if (imageMatch) ogData.image = imageMatch[1];
+    const ogData: OpenGraphData = {};
 
-  const urlMatch = html.match(/<meta property="og:url" content="([^"]*)"[^>]*>/i);
-  if (urlMatch) ogData.url = urlMatch[1];
+    // Extract Open Graph tags
+    const titleMatch = html.match(/<meta property="og:title" content="([^"]*)"[^>]*>/i);
+    if (titleMatch) ogData.title = titleMatch[1];
 
-  return ogData;
-}, {
-  timeout: 15000,
-  errorThresholdPercentage: 50,
-  resetTimeout: 30000
-});
+    const descMatch = html.match(/<meta property="og:description" content="([^"]*)"[^>]*>/i);
+    if (descMatch) ogData.description = descMatch[1];
+
+    const imageMatch = html.match(/<meta property="og:image" content="([^"]*)"[^>]*>/i);
+    if (imageMatch) ogData.image = imageMatch[1];
+
+    const urlMatch = html.match(/<meta property="og:url" content="([^"]*)"[^>]*>/i);
+    if (urlMatch) ogData.url = urlMatch[1];
+
+    return ogData;
+  },
+  {
+    timeout: 15000,
+    errorThresholdPercentage: 50,
+    resetTimeout: 30000,
+  }
+);
 
 export const fetchMetadata = inngest.createFunction(
   {
     id: 'fetch-metadata',
     retries: 3,
     concurrency: {
-      limit: 10
-    }
+      limit: 10,
+    },
   },
   { event: 'item.metadata.requested' },
   async ({ event, step, logger }) => {
@@ -143,14 +152,14 @@ export const fetchMetadata = inngest.createFunction(
     await step.run('update-item', async () => {
       // This would use dependency injection in real implementation
       const itemRepository = getItemRepository();
-      
+
       if (metadata.error) {
         await itemRepository.update(itemId, {
-          metadata: { 
+          metadata: {
             ...metadata,
             fetchedAt: new Date().toISOString(),
-            status: 'failed'
-          }
+            status: 'failed',
+          },
         });
       } else {
         await itemRepository.update(itemId, {
@@ -161,8 +170,8 @@ export const fetchMetadata = inngest.createFunction(
           metadata: {
             ...metadata,
             fetchedAt: new Date().toISOString(),
-            status: 'success'
-          }
+            status: 'success',
+          },
         });
       }
     });
@@ -172,7 +181,7 @@ export const fetchMetadata = inngest.createFunction(
       await eventEmitter.emit('item.metadata.fetched', {
         itemId,
         success: !metadata.error,
-        metadata
+        metadata,
       });
     });
 
@@ -182,13 +191,13 @@ export const fetchMetadata = inngest.createFunction(
 
 async function fetchBookMetadata(isbn: string) {
   const response = await googleBooksBreaker.fire(isbn);
-  
+
   if (!response.items || response.items.length === 0) {
     return { error: 'No book found for ISBN' };
   }
 
   const book = response.items[0].volumeInfo;
-  
+
   return {
     title: book.title,
     author: book.authors?.[0],
@@ -197,20 +206,20 @@ async function fetchBookMetadata(isbn: string) {
     coverImage: book.imageLinks?.thumbnail,
     isbn,
     source: 'google-books',
-    rawResponse: response
+    rawResponse: response,
   };
 }
 
 async function fetchPaperMetadata(doi: string) {
   const response = await crossRefBreaker.fire(doi);
   const paper = response.message;
-  
-  const author = paper.author?.[0] 
+
+  const author = paper.author?.[0]
     ? `${paper.author[0].given} ${paper.author[0].family}`.trim()
     : undefined;
-    
+
   const publishedYear = paper.published?.['date-parts']?.[0]?.[0];
-  
+
   return {
     title: paper.title?.[0],
     author,
@@ -219,20 +228,20 @@ async function fetchPaperMetadata(doi: string) {
     url: paper.URL,
     doi,
     source: 'crossref',
-    rawResponse: response
+    rawResponse: response,
   };
 }
 
 async function fetchUrlMetadata(url: string) {
   const ogData = await urlScraperBreaker.fire(url);
-  
+
   return {
     title: ogData.title,
     description: ogData.description,
     coverImage: ogData.image,
     url: ogData.url || url,
     source: 'opengraph',
-    rawResponse: ogData
+    rawResponse: ogData,
   };
 }
 

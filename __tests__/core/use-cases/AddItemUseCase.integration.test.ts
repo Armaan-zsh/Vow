@@ -17,7 +17,7 @@ describe('AddItemUseCase Integration', () => {
   beforeEach(() => {
     itemRepository = new MockItemRepository();
     userRepository = new MockUserRepository();
-    
+
     eventEmitter = { emit: jest.fn() };
     jobScheduler = { schedule: jest.fn() };
     auditLogger = { log: jest.fn() };
@@ -34,7 +34,7 @@ describe('AddItemUseCase Integration', () => {
     const testUser = (User as any).create({
       username: 'testuser',
       email: 'test@example.com',
-      name: 'Test User'
+      name: 'Test User',
     });
     userRepository.create(testUser);
   });
@@ -45,14 +45,14 @@ describe('AddItemUseCase Integration', () => {
       title: 'Integration Test Book',
       type: ItemType.BOOK,
       author: 'Test Author',
-      isbn: '9780123456789'
+      isbn: '9780123456789',
     };
 
     const result = await useCase.execute(input);
 
     expect(result.title).toBe('Integration Test Book');
     expect(result.type).toBe(ItemType.BOOK);
-    
+
     // Verify item was saved
     const savedItem = await itemRepository.findById(result.id);
     expect(savedItem).toBeDefined();
@@ -63,14 +63,16 @@ describe('AddItemUseCase Integration', () => {
     const input: AddItemDTO = {
       userId: mockUserId,
       title: 'Test Book',
-      type: ItemType.BOOK
+      type: ItemType.BOOK,
     };
 
     // Mock transaction to throw error after item creation
-    jest.spyOn(userRepository as any, 'incrementStats').mockRejectedValue(new Error('Stats update failed'));
+    jest
+      .spyOn(userRepository as any, 'incrementStats')
+      .mockRejectedValue(new Error('Stats update failed'));
 
     await expect(useCase.execute(input)).rejects.toThrow('Stats update failed');
-    
+
     // Verify item was not saved due to transaction rollback
     const items = await itemRepository.findByUserId(mockUserId, { limit: 10 });
     expect(items.items).toHaveLength(0);
@@ -80,20 +82,20 @@ describe('AddItemUseCase Integration', () => {
     const input: AddItemDTO = {
       userId: mockUserId,
       title: 'Rate Limit Test',
-      type: ItemType.BOOK
+      type: ItemType.BOOK,
     };
 
     // Create 10 items quickly to hit rate limit
-    const promises = Array.from({ length: 11 }, (_, i) => 
+    const promises = Array.from({ length: 11 }, (_, i) =>
       useCase.execute({ ...input, title: `Book ${i}` })
     );
 
     const results = await Promise.allSettled(promises);
-    
+
     // First 10 should succeed, 11th should fail
-    const successful = results.filter(r => r.status === 'fulfilled');
-    const failed = results.filter(r => r.status === 'rejected');
-    
+    const successful = results.filter((r) => r.status === 'fulfilled');
+    const failed = results.filter((r) => r.status === 'rejected');
+
     expect(successful).toHaveLength(10);
     expect(failed).toHaveLength(1);
   });
@@ -102,14 +104,14 @@ describe('AddItemUseCase Integration', () => {
     const input: AddItemDTO = {
       userId: mockUserId,
       title: 'Stats Test Book',
-      type: ItemType.BOOK
+      type: ItemType.BOOK,
     };
 
     await useCase.execute(input);
 
     expect((userRepository as any).incrementStats).toHaveBeenCalledWith(mockUserId, {
       totalItems: 1,
-      bookCount: 1
+      bookCount: 1,
     });
   });
 
@@ -118,7 +120,7 @@ describe('AddItemUseCase Integration', () => {
       userId: mockUserId,
       title: 'Order Test Book',
       type: ItemType.BOOK,
-      isbn: '9780123456789'
+      isbn: '9780123456789',
     };
 
     await useCase.execute(input);
@@ -129,7 +131,7 @@ describe('AddItemUseCase Integration', () => {
     expect(jobScheduler.schedule).toHaveBeenCalledWith('fetch-metadata', {
       itemId: expect.any(String),
       type: 'isbn',
-      value: '9780123456789'
+      value: '9780123456789',
     });
   });
 });

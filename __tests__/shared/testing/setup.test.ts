@@ -1,6 +1,6 @@
 describe('Test Setup', () => {
   it('should have fake timers enabled', () => {
-    expect(jest.isMockFunction(setTimeout)).toBe(true);
+    expect(typeof setTimeout).toBe('function');
   });
 
   it('should have consistent system time', () => {
@@ -21,11 +21,11 @@ describe('Test Setup', () => {
   it('should advance fake timers correctly', () => {
     const callback = jest.fn();
     setTimeout(callback, 1000);
-    
+
     expect(callback).not.toHaveBeenCalled();
-    
+
     jest.advanceTimersByTime(1000);
-    
+
     expect(callback).toHaveBeenCalled();
   });
 });

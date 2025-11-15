@@ -4,7 +4,7 @@ export type UserId = string & { __brand: 'UserId' };
 export enum ProfileVisibility {
   PUBLIC = 'PUBLIC',
   UNLISTED = 'UNLISTED',
-  PRIVATE = 'PRIVATE'
+  PRIVATE = 'PRIVATE',
 }
 
 export interface UserStats {
@@ -43,7 +43,7 @@ export class User {
 
   constructor(props: UserConstructorProps) {
     this.validateUsername(props.username);
-    
+
     this._id = props.id;
     this._username = props.username;
     this._email = props.email;
@@ -57,23 +57,43 @@ export class User {
       papersCount: props.stats?.papersCount ?? 0,
       articlesCount: props.stats?.articlesCount ?? 0,
       streakDays: props.stats?.streakDays ?? 0,
-      lastReadDate: props.stats?.lastReadDate ?? null
+      lastReadDate: props.stats?.lastReadDate ?? null,
     };
     this._createdAt = props.createdAt ?? new Date();
     this._updatedAt = props.updatedAt ?? new Date();
   }
 
   // Getters
-  get id(): UserId { return this._id; }
-  get username(): string { return this._username; }
-  get email(): string | undefined { return this._email; }
-  get phone(): string | undefined { return this._phone; }
-  get name(): string | undefined { return this._name; }
-  get profileVisibility(): ProfileVisibility { return this._profileVisibility; }
-  get isVerified(): boolean { return this._isVerified; }
-  get stats(): UserStats { return { ...this._stats }; }
-  get createdAt(): Date { return this._createdAt; }
-  get updatedAt(): Date { return this._updatedAt; }
+  get id(): UserId {
+    return this._id;
+  }
+  get username(): string {
+    return this._username;
+  }
+  get email(): string | undefined {
+    return this._email;
+  }
+  get phone(): string | undefined {
+    return this._phone;
+  }
+  get name(): string | undefined {
+    return this._name;
+  }
+  get profileVisibility(): ProfileVisibility {
+    return this._profileVisibility;
+  }
+  get isVerified(): boolean {
+    return this._isVerified;
+  }
+  get stats(): UserStats {
+    return { ...this._stats };
+  }
+  get createdAt(): Date {
+    return this._createdAt;
+  }
+  get updatedAt(): Date {
+    return this._updatedAt;
+  }
 
   // Business logic methods
   canFollow(targetUserId: UserId): boolean {
@@ -88,10 +108,11 @@ export class User {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
-    
-    const shouldIncrement = !this._stats.lastReadDate || 
+
+    const shouldIncrement =
+      !this._stats.lastReadDate ||
       this._stats.lastReadDate.toDateString() === yesterday.toDateString();
-    
+
     return new User({
       id: this._id,
       username: this._username,
@@ -103,10 +124,10 @@ export class User {
       stats: {
         ...this._stats,
         streakDays: shouldIncrement ? this._stats.streakDays + 1 : 1,
-        lastReadDate: today
+        lastReadDate: today,
       },
       createdAt: this._createdAt,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     });
   }
 
@@ -114,11 +135,11 @@ export class User {
     if (!username || username.trim().length === 0) {
       throw new Error('Username is required');
     }
-    
+
     if (username.length > 39) {
       throw new Error('Username must be 39 characters or less');
     }
-    
+
     if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
       throw new Error('Username can only contain letters, numbers, underscores, and hyphens');
     }
@@ -137,9 +158,9 @@ declare module './User' {
   }
 }
 
-(User as any).create = function(props: Omit<UserConstructorProps, 'id'>) {
+(User as any).create = function (props: Omit<UserConstructorProps, 'id'>) {
   return new User({
     ...props,
-    id: createUserId(`user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
+    id: createUserId(`user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`),
   });
 };

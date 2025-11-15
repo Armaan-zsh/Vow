@@ -8,7 +8,7 @@ import { transformZodError } from '../../shared/types/errors';
 export enum SortBy {
   RELEVANCE = 'relevance',
   DATE_ADDED = 'date_added',
-  READ_DATE = 'read_date'
+  READ_DATE = 'read_date',
 }
 
 const SearchItemsDTOSchema = z.object({
@@ -20,7 +20,7 @@ const SearchItemsDTOSchema = z.object({
   tags: z.array(z.string()).optional(),
   sortBy: z.nativeEnum(SortBy).default(SortBy.RELEVANCE),
   cursor: z.string().optional(),
-  limit: z.number().min(1).max(50).default(20)
+  limit: z.number().min(1).max(50).default(20),
 });
 
 export type SearchItemsDTO = z.infer<typeof SearchItemsDTOSchema> & { userId: UserId };
@@ -73,7 +73,7 @@ export class SearchItemsUseCase {
 
     // Generate cache key
     const cacheKey = this.generateCacheKey(validatedInput);
-    
+
     // Try cache first
     const cached = await this.cache.get(cacheKey);
     if (cached) {
@@ -93,14 +93,14 @@ export class SearchItemsUseCase {
         filters: {
           type: validatedInput.type,
           tags: validatedInput.tags,
-          dateRange: validatedInput.readDateFrom || validatedInput.readDateTo ? true : false
-        }
+          dateRange: validatedInput.readDateFrom || validatedInput.readDateTo ? true : false,
+        },
       });
     }
 
     const response: SearchResponse = {
       ...results,
-      searchTime
+      searchTime,
     };
 
     // Cache results
@@ -121,7 +121,7 @@ export class SearchItemsUseCase {
   private async performSearch(input: SearchItemsDTO): Promise<Omit<SearchResponse, 'searchTime'>> {
     // Build search query with trigram matching
     const searchQuery = this.buildSearchQuery(input);
-    
+
     // Execute raw SQL query for performance
     const items = await this.itemRepository.searchWithRawQuery(
       input.userId,
@@ -133,9 +133,9 @@ export class SearchItemsUseCase {
     // Process results
     const hasNextPage = items.length > input.limit;
     const resultItems = hasNextPage ? items.slice(0, -1) : items;
-    
-    const searchResults = resultItems.map(item => this.mapToSearchResult(item, input.query));
-    
+
+    const searchResults = resultItems.map((item) => this.mapToSearchResult(item, input.query));
+
     // Sort by relevance if needed
     if (input.sortBy === SortBy.RELEVANCE) {
       searchResults.sort((a, b) => b.relevanceScore - a.relevanceScore);
@@ -145,7 +145,7 @@ export class SearchItemsUseCase {
       items: searchResults,
       nextCursor: hasNextPage ? resultItems[resultItems.length - 1].id : undefined,
       hasNextPage,
-      totalCount: await this.getTotalCount(input)
+      totalCount: await this.getTotalCount(input),
     };
   }
 
@@ -239,7 +239,7 @@ export class SearchItemsUseCase {
       addedAt: item.added_at,
       readDate: item.read_date,
       highlights,
-      relevanceScore
+      relevanceScore,
     };
   }
 
@@ -253,19 +253,19 @@ export class SearchItemsUseCase {
     return {
       title: item.title ? highlightText(item.title, query) : undefined,
       author: item.author ? highlightText(item.author, query) : undefined,
-      notes: item.notes ? highlightText(item.notes, query) : undefined
+      notes: item.notes ? highlightText(item.notes, query) : undefined,
     };
   }
 
   private calculateRelevanceScore(item: any, query: string): number {
     let score = 0;
-    
+
     // Title similarity (highest weight)
     score += (item.title_similarity || 0) * 2;
-    
+
     // Author similarity
     score += (item.author_similarity || 0) * 1.5;
-    
+
     // Exact matches get bonus points
     if (item.title?.toLowerCase().includes(query.toLowerCase())) {
       score += 1;
@@ -273,7 +273,7 @@ export class SearchItemsUseCase {
     if (item.author?.toLowerCase().includes(query.toLowerCase())) {
       score += 0.5;
     }
-    
+
     // Recent items get slight boost
     const daysSinceAdded = (Date.now() - new Date(item.added_at).getTime()) / (1000 * 60 * 60 * 24);
     score += Math.max(0, (30 - daysSinceAdded) / 30) * 0.1;
@@ -284,7 +284,10 @@ export class SearchItemsUseCase {
   private async getTotalCount(input: SearchItemsDTO): Promise<number> {
     // Simplified count query without sorting/pagination
     const countQuery = this.buildCountQuery(input);
-    const result = await this.itemRepository.executeRawQuery(countQuery, this.buildQueryParams(input));
+    const result = await this.itemRepository.executeRawQuery(
+      countQuery,
+      this.buildQueryParams(input)
+    );
     return parseInt(result[0]?.count || '0');
   }
 
@@ -325,13 +328,13 @@ export class SearchItemsUseCase {
 
   private buildQueryParams(input: SearchItemsDTO): any[] {
     const params = [input.userId, input.query, `%${input.query}%`];
-    
+
     if (input.type) params.push(input.type);
     if (input.readDateFrom) params.push(input.readDateFrom.toISOString());
     if (input.readDateTo) params.push(input.readDateTo.toISOString());
     if (input.tags) params.push(...input.tags);
     if (input.cursor) params.push(input.cursor);
-    
+
     params.push(input.limit.toString());
     return params;
   }
@@ -346,9 +349,9 @@ export class SearchItemsUseCase {
       tags: input.tags?.sort(),
       sortBy: input.sortBy,
       cursor: input.cursor,
-      limit: input.limit
+      limit: input.limit,
     };
-    
+
     return `search:${Buffer.from(JSON.stringify(key)).toString('base64')}`;
   }
 }

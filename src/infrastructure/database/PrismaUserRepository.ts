@@ -19,8 +19,8 @@ export class PrismaUserRepository implements IUserRepository {
           isPublic: user.isPublic,
           readingStreak: user.readingStreak,
           totalItemsRead: user.totalItemsRead,
-          version: 1
-        }
+          version: 1,
+        },
       });
 
       return this.toDomainEntity(prismaUser);
@@ -37,7 +37,7 @@ export class PrismaUserRepository implements IUserRepository {
 
   async findById(id: UserId): Promise<User | null> {
     const prismaUser = await this.prisma.user.findUnique({
-      where: { id }
+      where: { id },
     });
 
     return prismaUser ? this.toDomainEntity(prismaUser) : null;
@@ -45,7 +45,7 @@ export class PrismaUserRepository implements IUserRepository {
 
   async findByUsername(username: string): Promise<User | null> {
     const prismaUser = await this.prisma.user.findUnique({
-      where: { username }
+      where: { username },
     });
 
     return prismaUser ? this.toDomainEntity(prismaUser) : null;
@@ -53,13 +53,16 @@ export class PrismaUserRepository implements IUserRepository {
 
   async findByEmail(email: string): Promise<User | null> {
     const prismaUser = await this.prisma.user.findUnique({
-      where: { email }
+      where: { email },
     });
 
     return prismaUser ? this.toDomainEntity(prismaUser) : null;
   }
 
-  async update(id: UserId, data: Partial<Omit<User, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void> {
+  async update(
+    id: UserId,
+    data: Partial<Omit<User, 'id' | 'createdAt' | 'updatedAt'>>
+  ): Promise<void> {
     try {
       await this.prisma.user.update({
         where: { id },
@@ -72,8 +75,8 @@ export class PrismaUserRepository implements IUserRepository {
           isPublic: data.isPublic,
           readingStreak: data.readingStreak,
           totalItemsRead: data.totalItemsRead,
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -89,11 +92,14 @@ export class PrismaUserRepository implements IUserRepository {
     }
   }
 
-  async updateStats(id: UserId, stats: { readingStreak?: number; totalItemsRead?: number }): Promise<void> {
+  async updateStats(
+    id: UserId,
+    stats: { readingStreak?: number; totalItemsRead?: number }
+  ): Promise<void> {
     try {
       // Optimistic locking with version increment
       const result = await this.prisma.user.updateMany({
-        where: { 
+        where: {
           id,
           // Add version check for optimistic locking if needed
         },
@@ -101,8 +107,8 @@ export class PrismaUserRepository implements IUserRepository {
           readingStreak: stats.readingStreak,
           totalItemsRead: stats.totalItemsRead,
           updatedAt: new Date(),
-          version: { increment: 1 }
-        }
+          version: { increment: 1 },
+        },
       });
 
       if (result.count === 0) {
@@ -121,7 +127,7 @@ export class PrismaUserRepository implements IUserRepository {
   async delete(id: UserId): Promise<void> {
     try {
       await this.prisma.user.delete({
-        where: { id }
+        where: { id },
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -145,7 +151,7 @@ export class PrismaUserRepository implements IUserRepository {
       readingStreak: prismaUser.readingStreak,
       totalItemsRead: prismaUser.totalItemsRead,
       createdAt: prismaUser.createdAt,
-      updatedAt: prismaUser.updatedAt
+      updatedAt: prismaUser.updatedAt,
     });
   }
 }

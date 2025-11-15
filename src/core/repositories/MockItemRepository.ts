@@ -1,4 +1,9 @@
-import { IItemRepository, SearchFilters, PaginationOptions, PaginatedResult } from './IItemRepository';
+import {
+  IItemRepository,
+  SearchFilters,
+  PaginationOptions,
+  PaginatedResult,
+} from './IItemRepository';
 import { Item, ItemId, ItemType, ReadingStatus } from '../entities/Item';
 import { UserId } from '../entities/User';
 
@@ -16,38 +21,38 @@ export class MockItemRepository implements IItemRepository {
 
   async create(item: Omit<Item, 'id' | 'addedAt'>): Promise<Item> {
     await this.simulateLatency();
-    
+
     const newItem = new Item({
       ...item,
       id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as ItemId,
       addedAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     });
-    
+
     this.items.set(newItem.id, newItem);
     return newItem;
   }
 
   async findByUserId(userId: UserId, options: PaginationOptions): Promise<PaginatedResult<Item>> {
     await this.simulateLatency();
-    
+
     if (options.limit <= 0 || options.limit > 100) {
       throw new Error('Limit must be between 1 and 100');
     }
 
     // Get all items for user, sorted by addedAt DESC, then id ASC
     const userItems = Array.from(this.items.values())
-      .filter(item => item.userId === userId)
+      .filter((item) => item.userId === userId)
       .sort((a, b) => {
         const dateCompare = b.addedAt.getTime() - a.addedAt.getTime();
         return dateCompare !== 0 ? dateCompare : a.id.localeCompare(b.id);
       });
 
     let startIndex = 0;
-    
+
     // Find cursor position if provided
     if (options.cursor) {
-      const cursorIndex = userItems.findIndex(item => item.id === options.cursor);
+      const cursorIndex = userItems.findIndex((item) => item.id === options.cursor);
       if (cursorIndex === -1) {
         throw new Error(`Invalid cursor: ${options.cursor}`);
       }
@@ -56,33 +61,33 @@ export class MockItemRepository implements IItemRepository {
 
     // Get page of items
     const pageItems = userItems.slice(startIndex, startIndex + options.limit);
-    
+
     // Determine next cursor
-    const nextCursor = pageItems.length === options.limit && startIndex + options.limit < userItems.length
-      ? pageItems[pageItems.length - 1].id
-      : null;
+    const nextCursor =
+      pageItems.length === options.limit && startIndex + options.limit < userItems.length
+        ? pageItems[pageItems.length - 1].id
+        : null;
 
     return {
       items: pageItems,
       nextCursor,
-      hasNextPage: nextCursor !== null
+      hasNextPage: nextCursor !== null,
     };
   }
 
   async search(userId: UserId, query: string, filters?: SearchFilters): Promise<Item[]> {
     await this.simulateLatency();
-    
+
     if (!query || query.trim().length < 2) {
       throw new Error('Query must be at least 2 characters');
     }
 
     const normalizedQuery = query.toLowerCase().trim();
-    
-    let results = Array.from(this.items.values())
-      .filter(item => item.userId === userId);
+
+    let results = Array.from(this.items.values()).filter((item) => item.userId === userId);
 
     // Apply text search (trigram-like matching)
-    results = results.filter(item => {
+    results = results.filter((item) => {
       const titleMatch = item.title.toLowerCase().includes(normalizedQuery);
       const authorMatch = item.author?.toLowerCase().includes(normalizedQuery) || false;
       return titleMatch || authorMatch;
@@ -91,21 +96,19 @@ export class MockItemRepository implements IItemRepository {
     // Apply filters
     if (filters) {
       if (filters.type) {
-        results = results.filter(item => item.type === filters.type);
+        results = results.filter((item) => item.type === filters.type);
       }
       if (filters.status) {
-        results = results.filter(item => item.status === filters.status);
+        results = results.filter((item) => item.status === filters.status);
       }
       if (filters.rating) {
-        results = results.filter(item => item.rating === filters.rating);
+        results = results.filter((item) => item.rating === filters.rating);
       }
       if (filters.publishedYear) {
-        results = results.filter(item => item.publishedYear === filters.publishedYear);
+        results = results.filter((item) => item.publishedYear === filters.publishedYear);
       }
       if (filters.hasNotes !== undefined) {
-        results = results.filter(item => 
-          filters.hasNotes ? !!item.notes : !item.notes
-        );
+        results = results.filter((item) => (filters.hasNotes ? !!item.notes : !item.notes));
       }
     }
 
@@ -113,16 +116,16 @@ export class MockItemRepository implements IItemRepository {
     results.sort((a, b) => {
       const aExactTitle = a.title.toLowerCase() === normalizedQuery;
       const bExactTitle = b.title.toLowerCase() === normalizedQuery;
-      
+
       if (aExactTitle && !bExactTitle) return -1;
       if (!aExactTitle && bExactTitle) return 1;
-      
+
       const aTitleStart = a.title.toLowerCase().startsWith(normalizedQuery);
       const bTitleStart = b.title.toLowerCase().startsWith(normalizedQuery);
-      
+
       if (aTitleStart && !bTitleStart) return -1;
       if (!aTitleStart && bTitleStart) return 1;
-      
+
       return b.addedAt.getTime() - a.addedAt.getTime();
     });
 
@@ -131,7 +134,7 @@ export class MockItemRepository implements IItemRepository {
 
   async update(id: ItemId, data: Partial<Omit<Item, 'id' | 'userId' | 'addedAt'>>): Promise<void> {
     await this.simulateLatency();
-    
+
     const item = this.items.get(id);
     if (!item) {
       throw new Error(`Item with id '${id}' not found`);
@@ -154,7 +157,7 @@ export class MockItemRepository implements IItemRepository {
       isPublic: data.isPublic ?? item.isPublic,
       metadata: data.metadata ?? item.metadata,
       addedAt: item.addedAt,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     });
 
     this.items.set(id, updatedItem);
@@ -162,7 +165,7 @@ export class MockItemRepository implements IItemRepository {
 
   async delete(id: ItemId): Promise<void> {
     await this.simulateLatency();
-    
+
     if (!this.items.has(id)) {
       throw new Error(`Item with id '${id}' not found`);
     }
@@ -185,31 +188,36 @@ export class MockItemRepository implements IItemRepository {
 
   async countByUserInTimeWindow(userId: UserId, windowMs: number): Promise<number> {
     await this.simulateLatency();
-    
+
     const cutoff = new Date(Date.now() - windowMs);
-    return Array.from(this.items.values())
-      .filter(item => item.userId === userId && item.addedAt >= cutoff)
-      .length;
+    return Array.from(this.items.values()).filter(
+      (item) => item.userId === userId && item.addedAt >= cutoff
+    ).length;
   }
 
   async transaction<T>(fn: () => Promise<T>): Promise<T> {
     return await fn();
   }
 
-  async searchWithRawQuery(userId: UserId, query: string, cursor?: string, limit = 20): Promise<any[]> {
+  async searchWithRawQuery(
+    userId: UserId,
+    query: string,
+    cursor?: string,
+    limit = 20
+  ): Promise<any[]> {
     await this.simulateLatency();
-    
+
     // Mock implementation - in real app this would use Prisma raw query
     const normalizedQuery = query.toLowerCase();
     let results = Array.from(this.items.values())
-      .filter(item => item.userId === userId)
-      .filter(item => {
+      .filter((item) => item.userId === userId)
+      .filter((item) => {
         const titleMatch = item.title.toLowerCase().includes(normalizedQuery);
         const authorMatch = item.author?.toLowerCase().includes(normalizedQuery) || false;
         const notesMatch = item.notes?.toLowerCase().includes(normalizedQuery) || false;
         return titleMatch || authorMatch || notesMatch;
       })
-      .map(item => ({
+      .map((item) => ({
         id: item.id,
         title: item.title,
         author: item.author,
@@ -219,12 +227,12 @@ export class MockItemRepository implements IItemRepository {
         notes: item.notes,
         metadata: item.metadata,
         title_similarity: this.calculateSimilarity(item.title, normalizedQuery),
-        author_similarity: this.calculateSimilarity(item.author || '', normalizedQuery)
+        author_similarity: this.calculateSimilarity(item.author || '', normalizedQuery),
       }));
 
     // Apply cursor pagination
     if (cursor) {
-      const cursorIndex = results.findIndex(item => item.id === cursor);
+      const cursorIndex = results.findIndex((item) => item.id === cursor);
       if (cursorIndex >= 0) {
         results = results.slice(cursorIndex + 1);
       }
@@ -235,41 +243,41 @@ export class MockItemRepository implements IItemRepository {
 
   async executeRawQuery(query: string, params: any[]): Promise<any[]> {
     await this.simulateLatency();
-    
+
     // Mock count query result
     if (query.includes('COUNT(*)')) {
       const userId = params[0];
       const searchQuery = params[1]?.toLowerCase() || '';
       const count = Array.from(this.items.values())
-        .filter(item => item.userId === userId)
-        .filter(item => {
+        .filter((item) => item.userId === userId)
+        .filter((item) => {
           const titleMatch = item.title.toLowerCase().includes(searchQuery);
           const authorMatch = item.author?.toLowerCase().includes(searchQuery) || false;
           return titleMatch || authorMatch;
         }).length;
-      
+
       return [{ count: count.toString() }];
     }
-    
+
     return [];
   }
 
   private calculateSimilarity(text: string, query: string): number {
     if (!text || !query) return 0;
-    
+
     const textLower = text.toLowerCase();
     const queryLower = query.toLowerCase();
-    
+
     // Simple similarity calculation
     if (textLower === queryLower) return 1;
     if (textLower.includes(queryLower)) return 0.8;
     if (textLower.startsWith(queryLower)) return 0.6;
-    
+
     // Basic trigram-like matching
     const textTrigrams = this.getTrigrams(textLower);
     const queryTrigrams = this.getTrigrams(queryLower);
-    const intersection = textTrigrams.filter(t => queryTrigrams.includes(t));
-    
+    const intersection = textTrigrams.filter((t) => queryTrigrams.includes(t));
+
     return intersection.length / Math.max(textTrigrams.length, queryTrigrams.length);
   }
 
@@ -284,6 +292,6 @@ export class MockItemRepository implements IItemRepository {
 
   private async simulateLatency(): Promise<void> {
     const delay = Math.floor(Math.random() * 40) + 10; // 10-50ms
-    await new Promise(resolve => setTimeout(resolve, delay));
+    await new Promise((resolve) => setTimeout(resolve, delay));
   }
 }

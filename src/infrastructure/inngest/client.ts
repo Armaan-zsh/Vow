@@ -3,5 +3,5 @@ import { Inngest } from 'inngest';
 
 export const inngest = new Inngest({
   id: 'readflex',
-  name: 'ReadFlex Background Jobs'
+  name: 'ReadFlex Background Jobs',
 });

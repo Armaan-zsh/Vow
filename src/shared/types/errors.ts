@@ -5,7 +5,10 @@ export abstract class ReadFlexError extends Error {
   abstract readonly statusCode: number;
   abstract readonly shouldReport: boolean;
 
-  constructor(message: string, public readonly context?: Record<string, any>) {
+  constructor(
+    message: string,
+    public readonly context?: Record<string, any>
+  ) {
     super(message);
     this.name = this.constructor.name;
   }
@@ -16,7 +19,7 @@ export abstract class ReadFlexError extends Error {
       code: this.code,
       message: this.message,
       statusCode: this.statusCode,
-      context: this.context
+      context: this.context,
     };
   }
 
@@ -30,7 +33,10 @@ export class RateLimitError extends ReadFlexError {
   readonly statusCode = 429;
   readonly shouldReport = false;
 
-  constructor(message = 'Too many requests. Please try again later.', context?: Record<string, any>) {
+  constructor(
+    message = 'Too many requests. Please try again later.',
+    context?: Record<string, any>
+  ) {
     super(message, context);
   }
 }
@@ -68,7 +74,10 @@ export class AuthorizationError extends ReadFlexError {
   readonly statusCode = 403;
   readonly shouldReport = false;
 
-  constructor(message = 'You are not authorized to perform this action.', context?: Record<string, any>) {
+  constructor(
+    message = 'You are not authorized to perform this action.',
+    context?: Record<string, any>
+  ) {
     super(message, context);
   }
 
@@ -144,15 +153,16 @@ export function createConflictError(field: string, value: string): ConflictError
 
 // Zod error transformation
 export function transformZodError(error: ZodError): ValidationError {
-  const issues = error.issues.map(issue => ({
+  const issues = error.issues.map((issue) => ({
     path: issue.path.join('.'),
     message: issue.message,
-    code: issue.code
+    code: issue.code,
   }));
 
-  const message = issues.length === 1 
-    ? issues[0].message
-    : `Validation failed: ${issues.map(i => i.message).join(', ')}`;
+  const message =
+    issues.length === 1
+      ? issues[0].message
+      : `Validation failed: ${issues.map((i) => i.message).join(', ')}`;
 
   return new ValidationError(message, { issues });
 }
@@ -175,8 +185,8 @@ export function serializeError(error: ReadFlexError): ErrorResponse {
       message: error.message,
       userMessage: error.getUserMessage(),
       statusCode: error.statusCode,
-      context: error.context
-    }
+      context: error.context,
+    },
   };
 }
 

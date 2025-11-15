@@ -2,20 +2,58 @@
 // Mock Prisma for tests
 const prisma = {
   user: {
-    findUnique: async () => null
-  }
+    findUnique: async () => null,
+  },
 };
 
 const ADJECTIVES = [
-  'clever', 'bright', 'swift', 'bold', 'wise', 'keen', 'sharp', 'quick',
-  'smart', 'witty', 'agile', 'brave', 'calm', 'cool', 'eager', 'fair',
-  'gentle', 'happy', 'kind', 'lively', 'merry', 'nice', 'proud', 'quiet'
+  'clever',
+  'bright',
+  'swift',
+  'bold',
+  'wise',
+  'keen',
+  'sharp',
+  'quick',
+  'smart',
+  'witty',
+  'agile',
+  'brave',
+  'calm',
+  'cool',
+  'eager',
+  'fair',
+  'gentle',
+  'happy',
+  'kind',
+  'lively',
+  'merry',
+  'nice',
+  'proud',
+  'quiet',
 ];
 
 const NOUNS = [
-  'reader', 'scholar', 'thinker', 'learner', 'seeker', 'explorer', 'dreamer',
-  'writer', 'student', 'teacher', 'mentor', 'guide', 'sage', 'philosopher',
-  'bookworm', 'bibliophile', 'wordsmith', 'storyteller', 'narrator', 'scribe'
+  'reader',
+  'scholar',
+  'thinker',
+  'learner',
+  'seeker',
+  'explorer',
+  'dreamer',
+  'writer',
+  'student',
+  'teacher',
+  'mentor',
+  'guide',
+  'sage',
+  'philosopher',
+  'bookworm',
+  'bibliophile',
+  'wordsmith',
+  'storyteller',
+  'narrator',
+  'scribe',
 ];
 
 export async function generateUsername(baseInput?: string): Promise<string> {
@@ -37,7 +75,7 @@ export async function generateUsername(baseInput?: string): Promise<string> {
     }
 
     const existing = await prisma.user.findUnique({
-      where: { username }
+      where: { username },
     });
 
     if (!existing) {
@@ -60,9 +98,29 @@ function cleanUsername(input: string): string {
 
 export function validateUsername(username: string): boolean {
   const reservedWords = [
-    'admin', 'api', 'www', 'mail', 'ftp', 'localhost', 'root', 'support',
-    'help', 'info', 'contact', 'about', 'terms', 'privacy', 'login', 'signup',
-    'auth', 'oauth', 'callback', 'webhook', 'test', 'demo', 'example'
+    'admin',
+    'api',
+    'www',
+    'mail',
+    'ftp',
+    'localhost',
+    'root',
+    'support',
+    'help',
+    'info',
+    'contact',
+    'about',
+    'terms',
+    'privacy',
+    'login',
+    'signup',
+    'auth',
+    'oauth',
+    'callback',
+    'webhook',
+    'test',
+    'demo',
+    'example',
   ];
 
   if (username.length < 3 || username.length > 20) {

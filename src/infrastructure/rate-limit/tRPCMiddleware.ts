@@ -9,18 +9,21 @@ interface RateLimitContext {
 }
 
 export function createRateLimitMiddleware(rateLimitConfig: typeof RATE_LIMITS.AUTHENTICATED_USER) {
-  return async function rateLimitMiddleware(opts: { ctx: RateLimitContext; next: () => Promise<any> }) {
+  return async function rateLimitMiddleware(opts: {
+    ctx: RateLimitContext;
+    next: () => Promise<any>;
+  }) {
     const { ctx } = opts;
-    
+
     // Determine identifier based on authentication
     const identifier = ctx.user?.id || getClientIP(ctx.req);
-    
+
     try {
       const result = await rateLimiter.checkLimit(identifier, rateLimitConfig);
-      
+
       if (!result.allowed) {
         const retryAfter = Math.ceil((result.resetTime - Date.now()) / 1000);
-        
+
         throw new TRPCError({
           code: 'TOO_MANY_REQUESTS',
           message: 'Rate limit exceeded',
@@ -28,25 +31,25 @@ export function createRateLimitMiddleware(rateLimitConfig: typeof RATE_LIMITS.AU
             retryAfter,
             limit: rateLimitConfig.maxRequests,
             remaining: result.remaining,
-            resetTime: result.resetTime
-          })
+            resetTime: result.resetTime,
+          }),
         });
       }
-      
+
       // Add rate limit headers to context for response
       ctx.rateLimitHeaders = {
         'X-RateLimit-Limit': rateLimitConfig.maxRequests.toString(),
         'X-RateLimit-Remaining': result.remaining.toString(),
-        'X-RateLimit-Reset': Math.ceil(result.resetTime / 1000).toString()
+        'X-RateLimit-Reset': Math.ceil(result.resetTime / 1000).toString(),
       };
-      
+
       return opts.next();
     } catch (error) {
       if (error instanceof RateLimitError) {
         throw new TRPCError({
           code: 'TOO_MANY_REQUESTS',
           message: error.message,
-          cause: error
+          cause: error,
         });
       }
       throw error;

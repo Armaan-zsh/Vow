@@ -65,7 +65,7 @@ export class MockUserRepository implements IUserRepository {
       isVerified: user.isVerified,
       stats: { ...user.stats, ...stats },
       createdAt: user.createdAt,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     });
 
     this.users.set(userId, updatedUser);

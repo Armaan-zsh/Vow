@@ -23,7 +23,9 @@ globalThis.IntersectionObserver = class {
   disconnect() {}
   observe() {}
   unobserve() {}
-  takeRecords() { return []; }
+  takeRecords() {
+    return [];
+  }
 } as any;
 
 globalThis.ResizeObserver = class {
@@ -39,13 +41,11 @@ globalThis.ResizeObserver = class {
 // FIX 3: FRAMER MOTION AUTO-MOCK - prevents whileHover/whileTap warnings
 jest.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, whileHover, whileTap, ...props }: any) => 
+    div: ({ children, whileHover, whileTap, ...props }: any) =>
       React.createElement('div', props, children),
-    span: ({ children, ...props }: any) => 
-      React.createElement('span', props, children),
-    button: ({ children, ...props }: any) => 
-      React.createElement('button', props, children),
-    article: ({ children, whileHover, whileTap, ...props }: any) => 
+    span: ({ children, ...props }: any) => React.createElement('span', props, children),
+    button: ({ children, ...props }: any) => React.createElement('button', props, children),
+    article: ({ children, whileHover, whileTap, ...props }: any) =>
       React.createElement('article', props, children),
   },
   AnimatePresence: ({ children }: any) => children,

@@ -9,11 +9,11 @@ let testUserRepo: MockUserRepository;
 beforeEach(() => {
   testItemRepo = new MockItemRepository();
   testUserRepo = new MockUserRepository();
-  
+
   // FIX: Clear ALL data before each test
   testItemRepo.clear();
   testUserRepo.clear();
-  
+
   // FIX: Create default user needed by most tests
   // testUserRepo.create(createTestUser());
 });

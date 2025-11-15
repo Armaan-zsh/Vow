@@ -39,7 +39,7 @@ describe.skip('NextAuth Integration', () => {
 
     it('should reject reserved words', () => {
       const reserved = ['admin', 'api', 'www', 'root', 'support'];
-      reserved.forEach(word => {
+      reserved.forEach((word) => {
         expect(validateUsername(word)).toBe(false);
       });
     });
@@ -73,8 +73,8 @@ describe.skip('NextAuth Integration', () => {
       const mockSession = {
         user: {
           id: 'user-123',
-          email: 'test@example.com'
-        }
+          email: 'test@example.com',
+        },
       };
 
       expect(mockSession.user.id).toBeDefined();
@@ -83,7 +83,7 @@ describe.skip('NextAuth Integration', () => {
     it('should include userId in JWT token', async () => {
       const mockToken = {
         userId: 'user-123',
-        username: 'testuser'
+        username: 'testuser',
       };
 
       expect(mockToken.userId).toBeDefined();
@@ -95,7 +95,7 @@ describe.skip('NextAuth Integration', () => {
     it('should handle signIn callback', async () => {
       const mockUser = {
         email: 'test@example.com',
-        name: 'Test User'
+        name: 'Test User',
       };
 
       expect(mockUser.email).toBeDefined();

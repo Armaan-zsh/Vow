@@ -11,19 +11,19 @@ interface ItemCardProps {
 
 const typeColors = {
   BOOK: '#FF6B35',
-  PAPER: '#F7931E', 
-  ARTICLE: '#FFD23F'
+  PAPER: '#F7931E',
+  ARTICLE: '#FFD23F',
 };
 
 const typeIcons = {
   BOOK: '📚',
   PAPER: '📄',
-  ARTICLE: '📰'
+  ARTICLE: '📰',
 };
 
 export function ItemCard({ item, variant, onEdit }: ItemCardProps) {
   const isGrid = variant === 'grid';
-  
+
   return (
     <motion.article
       className={`
@@ -31,10 +31,10 @@ export function ItemCard({ item, variant, onEdit }: ItemCardProps) {
         ${isGrid ? 'w-[200px] h-[300px]' : 'w-full h-[120px] flex'}
         cursor-pointer overflow-hidden
       `}
-      whileHover={{ 
+      whileHover={{
         scale: isGrid ? 1.05 : 1.02,
         rotate: isGrid ? 2 : 0,
-        boxShadow: '12px 12px 0px 0px rgba(0,0,0,1)'
+        boxShadow: '12px 12px 0px 0px rgba(0,0,0,1)',
       }}
       whileTap={{ scale: 0.95 }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
@@ -45,10 +45,12 @@ export function ItemCard({ item, variant, onEdit }: ItemCardProps) {
       aria-label={`Edit ${item.title} by ${item.author || 'Unknown author'}`}
     >
       {/* Cover Image */}
-      <div className={`
+      <div
+        className={`
         relative overflow-hidden
         ${isGrid ? 'w-full h-[200px]' : 'w-[80px] h-full flex-shrink-0'}
-      `}>
+      `}
+      >
         {item.coverImage ? (
           <img
             src={item.coverImage}
@@ -56,7 +58,7 @@ export function ItemCard({ item, variant, onEdit }: ItemCardProps) {
             className="w-full h-full object-cover"
           />
         ) : (
-          <div 
+          <div
             className="w-full h-full flex items-center justify-center text-4xl font-black"
             style={{ backgroundColor: typeColors[item.type] }}
             data-testid="fallback-icon"
@@ -64,9 +66,9 @@ export function ItemCard({ item, variant, onEdit }: ItemCardProps) {
             {typeIcons[item.type]}
           </div>
         )}
-        
+
         {/* Type Badge */}
-        <div 
+        <div
           className="absolute top-2 right-2 px-2 py-1 text-xs font-black text-black border-2 border-black"
           style={{ backgroundColor: typeColors[item.type] }}
         >
@@ -75,23 +77,29 @@ export function ItemCard({ item, variant, onEdit }: ItemCardProps) {
       </div>
 
       {/* Content */}
-      <div className={`
+      <div
+        className={`
         p-3 flex flex-col justify-between
         ${isGrid ? 'h-[100px]' : 'flex-1 h-full'}
-      `}>
+      `}
+      >
         <div>
-          <h3 className={`
+          <h3
+            className={`
             font-black text-black leading-tight mb-1
             ${isGrid ? 'text-sm' : 'text-base'}
-          `}>
+          `}
+          >
             {item.title}
           </h3>
-          
+
           {item.author && (
-            <p className={`
+            <p
+              className={`
               font-bold text-gray-700
               ${isGrid ? 'text-xs' : 'text-sm'}
-            `}>
+            `}
+            >
               {item.author}
             </p>
           )}
@@ -99,11 +107,9 @@ export function ItemCard({ item, variant, onEdit }: ItemCardProps) {
 
         <div className="flex items-center justify-between mt-2">
           {item.publishedYear && (
-            <span className="text-xs font-bold text-gray-600">
-              {item.publishedYear}
-            </span>
+            <span className="text-xs font-bold text-gray-600">{item.publishedYear}</span>
           )}
-          
+
           {item.rating && (
             <div className="flex" aria-label={`Rating: ${item.rating} out of 5 stars`}>
               {[...Array(5)].map((_, i) => (

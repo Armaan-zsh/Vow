@@ -45,27 +45,24 @@ export class RateLimiter {
     this.redis = new Redis({ url: redisUrl });
   }
 
-  async checkLimit(
-    identifier: string,
-    options: RateLimitOptions
-  ): Promise<RateLimitResult> {
-    const key = options.keyGenerator 
+  async checkLimit(identifier: string, options: RateLimitOptions): Promise<RateLimitResult> {
+    const key = options.keyGenerator
       ? options.keyGenerator(identifier)
       : `rate_limit:${identifier}`;
-    
+
     const now = Date.now();
-    
-    const result = await this.redis.eval(
+
+    const result = (await this.redis.eval(
       this.luaScript,
       [key],
       [options.windowMs, options.maxRequests, now]
-    ) as [number, number, number, number];
+    )) as [number, number, number, number];
 
     return {
       allowed: result[0] === 1,
       remaining: result[1],
       resetTime: result[2],
-      totalHits: result[3]
+      totalHits: result[3],
     };
   }
 
@@ -80,32 +77,32 @@ export const RATE_LIMITS = {
   AUTHENTICATED_USER: {
     windowMs: 60 * 1000, // 1 minute
     maxRequests: 100,
-    keyGenerator: (userId: string) => `rate_limit:user:${userId}`
+    keyGenerator: (userId: string) => `rate_limit:user:${userId}`,
   },
-  
+
   UNAUTHENTICATED_IP: {
     windowMs: 60 * 1000, // 1 minute
     maxRequests: 10,
-    keyGenerator: (ip: string) => `rate_limit:ip:${ip}`
+    keyGenerator: (ip: string) => `rate_limit:ip:${ip}`,
   },
-  
+
   ITEM_CREATION: {
     windowMs: 60 * 1000, // 1 minute
     maxRequests: 10,
-    keyGenerator: (userId: string) => `rate_limit:items:${userId}`
+    keyGenerator: (userId: string) => `rate_limit:items:${userId}`,
   },
-  
+
   PHONE_OTP: {
     windowMs: 60 * 60 * 1000, // 1 hour
     maxRequests: 3,
-    keyGenerator: (phone: string) => `rate_limit:otp:${phone}`
+    keyGenerator: (phone: string) => `rate_limit:otp:${phone}`,
   },
-  
+
   EMAIL_MAGIC_LINK: {
     windowMs: 60 * 1000, // 1 minute
     maxRequests: 5,
-    keyGenerator: (email: string) => `rate_limit:email:${email}`
-  }
+    keyGenerator: (email: string) => `rate_limit:email:${email}`,
+  },
 };
 
 // Global rate limiter instance
@@ -116,14 +113,14 @@ export function getClientIP(request: Request): string {
   // Check Cloudflare header first
   const cfConnectingIP = request.headers.get('CF-Connecting-IP');
   if (cfConnectingIP) return cfConnectingIP;
-  
+
   // Fallback to other headers
   const xForwardedFor = request.headers.get('X-Forwarded-For');
   if (xForwardedFor) return xForwardedFor.split(',')[0].trim();
-  
+
   const xRealIP = request.headers.get('X-Real-IP');
   if (xRealIP) return xRealIP;
-  
+
   return 'unknown';
 }
 
@@ -132,22 +129,22 @@ export function createRateLimitMiddleware(options: RateLimitOptions) {
   return async (request: Request, identifier?: string) => {
     const id = identifier || getClientIP(request);
     const result = await rateLimiter.checkLimit(id, options);
-    
+
     if (!result.allowed) {
       const retryAfter = Math.ceil((result.resetTime - Date.now()) / 1000);
-      
+
       throw new RateLimitError('Rate limit exceeded', {
         retryAfter,
         limit: options.maxRequests,
         remaining: result.remaining,
-        resetTime: result.resetTime
+        resetTime: result.resetTime,
       });
     }
-    
+
     return {
       'X-RateLimit-Limit': options.maxRequests.toString(),
       'X-RateLimit-Remaining': result.remaining.toString(),
-      'X-RateLimit-Reset': Math.ceil(result.resetTime / 1000).toString()
+      'X-RateLimit-Reset': Math.ceil(result.resetTime / 1000).toString(),
     };
   };
 }

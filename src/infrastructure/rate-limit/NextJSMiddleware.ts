@@ -12,32 +12,32 @@ interface RateLimitMiddlewareOptions {
 export function createNextJSRateLimitMiddleware(options: RateLimitMiddlewareOptions) {
   return async function rateLimitMiddleware(request: NextRequest) {
     // Skip rate limiting for certain paths
-    if (options.skipPaths?.some(path => request.nextUrl.pathname.startsWith(path))) {
+    if (options.skipPaths?.some((path) => request.nextUrl.pathname.startsWith(path))) {
       return NextResponse.next();
     }
-    
+
     try {
       // Determine identifier
       let identifier: string;
-      
+
       if (options.getUserId) {
         const userId = await options.getUserId(request);
         identifier = userId || getClientIP(request);
       } else {
         identifier = getClientIP(request);
       }
-      
+
       const result = await rateLimiter.checkLimit(identifier, options.rateLimitConfig);
-      
+
       if (!result.allowed) {
         const retryAfter = Math.ceil((result.resetTime - Date.now()) / 1000);
-        
+
         return NextResponse.json(
           {
             error: 'Rate limit exceeded',
             retryAfter,
             limit: options.rateLimitConfig.maxRequests,
-            remaining: result.remaining
+            remaining: result.remaining,
           },
           {
             status: 429,
@@ -45,18 +45,18 @@ export function createNextJSRateLimitMiddleware(options: RateLimitMiddlewareOpti
               'X-RateLimit-Limit': options.rateLimitConfig.maxRequests.toString(),
               'X-RateLimit-Remaining': result.remaining.toString(),
               'X-RateLimit-Reset': Math.ceil(result.resetTime / 1000).toString(),
-              'Retry-After': retryAfter.toString()
-            }
+              'Retry-After': retryAfter.toString(),
+            },
           }
         );
       }
-      
+
       // Continue with request and add rate limit headers
       const response = NextResponse.next();
       response.headers.set('X-RateLimit-Limit', options.rateLimitConfig.maxRequests.toString());
       response.headers.set('X-RateLimit-Remaining', result.remaining.toString());
       response.headers.set('X-RateLimit-Reset', Math.ceil(result.resetTime / 1000).toString());
-      
+
       return response;
     } catch (error) {
       console.error('Rate limit middleware error:', error);
@@ -76,25 +76,25 @@ export function withRateLimit(
     try {
       // Determine identifier
       let identifier: string;
-      
+
       if (getUserId) {
         const userId = await getUserId(request);
         identifier = userId || getClientIP(request);
       } else {
         identifier = getClientIP(request);
       }
-      
+
       const result = await rateLimiter.checkLimit(identifier, rateLimitConfig);
-      
+
       if (!result.allowed) {
         const retryAfter = Math.ceil((result.resetTime - Date.now()) / 1000);
-        
+
         return NextResponse.json(
           {
             error: 'Rate limit exceeded',
             retryAfter,
             limit: rateLimitConfig.maxRequests,
-            remaining: result.remaining
+            remaining: result.remaining,
           },
           {
             status: 429,
@@ -102,20 +102,20 @@ export function withRateLimit(
               'X-RateLimit-Limit': rateLimitConfig.maxRequests.toString(),
               'X-RateLimit-Remaining': result.remaining.toString(),
               'X-RateLimit-Reset': Math.ceil(result.resetTime / 1000).toString(),
-              'Retry-After': retryAfter.toString()
-            }
+              'Retry-After': retryAfter.toString(),
+            },
           }
         );
       }
-      
+
       // Execute the handler
       const response = await handler(request);
-      
+
       // Add rate limit headers to response
       response.headers.set('X-RateLimit-Limit', rateLimitConfig.maxRequests.toString());
       response.headers.set('X-RateLimit-Remaining', result.remaining.toString());
       response.headers.set('X-RateLimit-Reset', Math.ceil(result.resetTime / 1000).toString());
-      
+
       return response;
     } catch (error) {
       if (error instanceof RateLimitError) {
@@ -124,12 +124,12 @@ export function withRateLimit(
           {
             status: 429,
             headers: {
-              'Retry-After': error.context?.retryAfter?.toString() || '60'
-            }
+              'Retry-After': error.context?.retryAfter?.toString() || '60',
+            },
           }
         );
       }
-      
+
       // Re-throw other errors
       throw error;
     }

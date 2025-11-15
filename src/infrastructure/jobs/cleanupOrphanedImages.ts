@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { env } from '@/shared/config/env';
 
 const inngest = {
-  createFunction: (config: any, trigger: any, handler: any) => ({ config, trigger, handler })
+  createFunction: (config: any, trigger: any, handler: any) => ({ config, trigger, handler }),
 };
 
 function createClient(url: string, key: string) {
@@ -10,9 +10,9 @@ function createClient(url: string, key: string) {
     storage: {
       from: (bucket: string) => ({
         list: async (path: string, options: any) => ({ data: [], error: null }),
-        remove: async (paths: string[]) => ({ error: null })
-      })
-    }
+        remove: async (paths: string[]) => ({ error: null }),
+      }),
+    },
   };
 }
 
@@ -28,7 +28,7 @@ export const cleanupOrphanedImages = inngest.createFunction(
       const { data: files, error } = await step.run('list-storage-files', async () => {
         return await supabase.storage.from('covers').list('covers', {
           limit: 1000,
-          sortBy: { column: 'created_at', order: 'asc' }
+          sortBy: { column: 'created_at', order: 'asc' },
         });
       });
 
@@ -56,14 +56,14 @@ export const cleanupOrphanedImages = inngest.createFunction(
       const existingItems = await step.run('get-existing-items', async () => {
         return await prisma.item.findMany({
           where: { id: { in: Array.from(storageItemIds) } },
-          select: { id: true }
+          select: { id: true },
         });
       });
 
       const existingItemIds = new Set(existingItems.map((item: any) => item.id));
 
       // Find orphaned files
-      const orphanedPaths = filePaths.filter(path => {
+      const orphanedPaths = filePaths.filter((path) => {
         const match = path.match(/covers\/[^\/]+\/([^\/]+)\.webp$/);
         return match && !existingItemIds.has(match[1]);
       });
@@ -78,7 +78,7 @@ export const cleanupOrphanedImages = inngest.createFunction(
 
       for (let i = 0; i < orphanedPaths.length; i += batchSize) {
         const batch = orphanedPaths.slice(i, i + batchSize);
-        
+
         await step.run(`delete-batch-${Math.floor(i / batchSize)}`, async () => {
           const { error } = await supabase.storage.from('covers').remove(batch);
           if (error) {
@@ -92,7 +92,7 @@ export const cleanupOrphanedImages = inngest.createFunction(
 
       return {
         deletedCount,
-        message: `Successfully deleted ${deletedCount} orphaned images`
+        message: `Successfully deleted ${deletedCount} orphaned images`,
       };
     } finally {
       await prisma.$disconnect();

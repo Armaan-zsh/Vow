@@ -10,7 +10,9 @@ type SearchItemsDTOInput = Omit<SearchItemsDTO, 'sortBy' | 'limit'> & {
 };
 
 // FIX: Factory ensures ALL required fields are present
-export const createSearchItemsDTO = (overrides: Partial<SearchItemsDTOInput> = {}): SearchItemsDTO => ({
+export const createSearchItemsDTO = (
+  overrides: Partial<SearchItemsDTOInput> = {}
+): SearchItemsDTO => ({
   userId: createUserId('user_123'),
   query: 'test query',
   sortBy: SortBy.RELEVANCE,

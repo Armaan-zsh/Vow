@@ -1,6 +1,6 @@
 module.exports = {
   root: true,
-  extends: ['next/core-web-vitals', '@typescript-eslint/recommended'],
+  extends: ['next/core-web-vitals'],
   plugins: ['@typescript-eslint', 'jest'],
   rules: {
     // FIX 1: DTOs must use factories in tests

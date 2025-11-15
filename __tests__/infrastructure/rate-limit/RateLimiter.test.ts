@@ -3,12 +3,16 @@ import { RateLimiter, RATE_LIMITS } from '../../../src/infrastructure/rate-limit
 
 const mockRedis = {
   eval: jest.fn(),
-  del: jest.fn()
+  del: jest.fn(),
 };
 
-jest.mock('@upstash/redis', () => ({
-  Redis: jest.fn(() => mockRedis)
-}), { virtual: true });
+jest.mock(
+  '@upstash/redis',
+  () => ({
+    Redis: jest.fn(() => mockRedis),
+  }),
+  { virtual: true }
+);
 
 describe('RateLimiter', () => {
   let rateLimiter: RateLimiter;
@@ -44,7 +48,7 @@ describe('RateLimiter', () => {
 
       const customOptions = {
         ...RATE_LIMITS.AUTHENTICATED_USER,
-        keyGenerator: (id: string) => `custom:${id}`
+        keyGenerator: (id: string) => `custom:${id}`,
       };
 
       await rateLimiter.checkLimit('user123', customOptions);
@@ -67,21 +71,21 @@ describe('RateLimiter', () => {
   describe('sliding window accuracy', () => {
     it('should handle burst traffic correctly', async () => {
       const now = Date.now();
-      
+
       const responses = [
         [1, 99, now + 60000, 1],
         [1, 98, now + 60000, 2],
         [1, 97, now + 60000, 3],
-        [0, 0, now + 60000, 100]
+        [0, 0, now + 60000, 100],
       ];
 
-      responses.forEach(response => {
+      responses.forEach((response) => {
         mockRedis.eval.mockResolvedValueOnce(response);
       });
 
       for (let i = 0; i < 4; i++) {
         const result = await rateLimiter.checkLimit('user123', RATE_LIMITS.AUTHENTICATED_USER);
-        
+
         if (i < 3) {
           expect(result.allowed).toBe(true);
         } else {
@@ -93,14 +97,14 @@ describe('RateLimiter', () => {
     it('should handle window expiration', async () => {
       const now = Date.now();
       const windowMs = 60000;
-      
+
       mockRedis.eval.mockResolvedValueOnce([1, 99, now + windowMs, 1]);
-      
+
       let result = await rateLimiter.checkLimit('user123', RATE_LIMITS.AUTHENTICATED_USER);
       expect(result.allowed).toBe(true);
-      
+
       mockRedis.eval.mockResolvedValueOnce([1, 99, now + windowMs * 2, 1]);
-      
+
       result = await rateLimiter.checkLimit('user123', RATE_LIMITS.AUTHENTICATED_USER);
       expect(result.allowed).toBe(true);
     });
@@ -170,10 +174,12 @@ describe('RateLimiter', () => {
     });
 
     it('should handle concurrent requests safely', async () => {
-      const promises = Array(10).fill(null).map(() => {
-        mockRedis.eval.mockResolvedValueOnce([1, 90, Date.now() + 60000, 10]);
-        return rateLimiter.checkLimit('user123', RATE_LIMITS.AUTHENTICATED_USER);
-      });
+      const promises = Array(10)
+        .fill(null)
+        .map(() => {
+          mockRedis.eval.mockResolvedValueOnce([1, 90, Date.now() + 60000, 10]);
+          return rateLimiter.checkLimit('user123', RATE_LIMITS.AUTHENTICATED_USER);
+        });
 
       const results = await Promise.all(promises);
 

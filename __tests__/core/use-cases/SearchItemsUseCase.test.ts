@@ -6,16 +6,16 @@ import { createSearchItemsDTO } from '../../../src/shared/testing/factories';
 // Mock dependencies
 const mockItemRepository = {
   searchWithRawQuery: jest.fn(),
-  executeRawQuery: jest.fn()
+  executeRawQuery: jest.fn(),
 };
 
 const mockCache = {
   get: jest.fn(),
-  set: jest.fn()
+  set: jest.fn(),
 };
 
 const mockLogger = {
-  warn: jest.fn()
+  warn: jest.fn(),
 };
 
 describe('SearchItemsUseCase', () => {
@@ -35,7 +35,7 @@ describe('SearchItemsUseCase', () => {
     it('should reject queries shorter than 2 characters', async () => {
       const input = createSearchItemsDTO({
         userId: mockUserId,
-        query: 'a'
+        query: 'a',
       });
 
       await expect(useCase.execute(input)).rejects.toThrow(ValidationError);
@@ -44,7 +44,7 @@ describe('SearchItemsUseCase', () => {
     it('should reject queries longer than 100 characters', async () => {
       const input = createSearchItemsDTO({
         userId: mockUserId,
-        query: 'a'.repeat(101)
+        query: 'a'.repeat(101),
       });
 
       await expect(useCase.execute(input)).rejects.toThrow(ValidationError);
@@ -56,7 +56,7 @@ describe('SearchItemsUseCase', () => {
         query: 'test book',
         type: ItemType.BOOK,
         sortBy: SortBy.RELEVANCE,
-        limit: 10
+        limit: 10,
       });
 
       mockCache.get.mockResolvedValue(null);
@@ -72,21 +72,23 @@ describe('SearchItemsUseCase', () => {
     it('should find exact title matches', async () => {
       const input = createSearchItemsDTO({
         userId: mockUserId,
-        query: 'The Great Gatsby'
+        query: 'The Great Gatsby',
       });
 
-      const mockResults = [{
-        id: 'item-1',
-        title: 'The Great Gatsby',
-        author: 'F. Scott Fitzgerald',
-        type: ItemType.BOOK,
-        added_at: new Date('2023-01-01'),
-        read_date: null,
-        notes: null,
-        metadata: {},
-        title_similarity: 1.0,
-        author_similarity: 0.0
-      }];
+      const mockResults = [
+        {
+          id: 'item-1',
+          title: 'The Great Gatsby',
+          author: 'F. Scott Fitzgerald',
+          type: ItemType.BOOK,
+          added_at: new Date('2023-01-01'),
+          read_date: null,
+          notes: null,
+          metadata: {},
+          title_similarity: 1.0,
+          author_similarity: 0.0,
+        },
+      ];
 
       mockCache.get.mockResolvedValue(null);
       mockItemRepository.searchWithRawQuery.mockResolvedValue(mockResults);
@@ -106,7 +108,7 @@ describe('SearchItemsUseCase', () => {
       const input = createSearchItemsDTO({
         userId: mockUserId,
         query: 'research',
-        type: ItemType.PAPER
+        type: ItemType.PAPER,
       });
 
       mockCache.get.mockResolvedValue(null);
@@ -128,7 +130,7 @@ describe('SearchItemsUseCase', () => {
         userId: mockUserId,
         query: 'book',
         readDateFrom: new Date('2023-01-01'),
-        readDateTo: new Date('2023-12-31')
+        readDateTo: new Date('2023-12-31'),
       });
 
       mockCache.get.mockResolvedValue(null);
@@ -149,7 +151,7 @@ describe('SearchItemsUseCase', () => {
       const input = createSearchItemsDTO({
         userId: mockUserId,
         query: 'fiction',
-        tags: ['classic', 'literature']
+        tags: ['classic', 'literature'],
       });
 
       mockCache.get.mockResolvedValue(null);
@@ -171,7 +173,7 @@ describe('SearchItemsUseCase', () => {
     it('should sort by relevance by default', async () => {
       const input = createSearchItemsDTO({
         userId: mockUserId,
-        query: 'test'
+        query: 'test',
       });
 
       const mockResults = [
@@ -185,7 +187,7 @@ describe('SearchItemsUseCase', () => {
           notes: null,
           metadata: {},
           title_similarity: 0.5,
-          author_similarity: 0.0
+          author_similarity: 0.0,
         },
         {
           id: 'item-2',
@@ -197,8 +199,8 @@ describe('SearchItemsUseCase', () => {
           notes: null,
           metadata: {},
           title_similarity: 1.0,
-          author_similarity: 0.0
-        }
+          author_similarity: 0.0,
+        },
       ];
 
       mockCache.get.mockResolvedValue(null);
@@ -215,7 +217,7 @@ describe('SearchItemsUseCase', () => {
       const input = createSearchItemsDTO({
         userId: mockUserId,
         query: 'test',
-        sortBy: SortBy.DATE_ADDED
+        sortBy: SortBy.DATE_ADDED,
       });
 
       mockCache.get.mockResolvedValue(null);
@@ -236,7 +238,7 @@ describe('SearchItemsUseCase', () => {
       const input = createSearchItemsDTO({
         userId: mockUserId,
         query: 'test',
-        sortBy: SortBy.READ_DATE
+        sortBy: SortBy.READ_DATE,
       });
 
       mockCache.get.mockResolvedValue(null);
@@ -260,7 +262,7 @@ describe('SearchItemsUseCase', () => {
         userId: mockUserId,
         query: 'test',
         cursor: 'item-5',
-        limit: 10
+        limit: 10,
       });
 
       mockCache.get.mockResolvedValue(null);
@@ -281,21 +283,23 @@ describe('SearchItemsUseCase', () => {
       const input = createSearchItemsDTO({
         userId: mockUserId,
         query: 'test',
-        limit: 2
+        limit: 2,
       });
 
-      const mockResults = Array(3).fill(null).map((_, i) => ({
-        id: `item-${i}`,
-        title: `Test Book ${i}`,
-        author: 'Author',
-        type: ItemType.BOOK,
-        added_at: new Date('2023-01-01'),
-        read_date: null,
-        notes: null,
-        metadata: {},
-        title_similarity: 0.8,
-        author_similarity: 0.0
-      }));
+      const mockResults = Array(3)
+        .fill(null)
+        .map((_, i) => ({
+          id: `item-${i}`,
+          title: `Test Book ${i}`,
+          author: 'Author',
+          type: ItemType.BOOK,
+          added_at: new Date('2023-01-01'),
+          read_date: null,
+          notes: null,
+          metadata: {},
+          title_similarity: 0.8,
+          author_similarity: 0.0,
+        }));
 
       mockCache.get.mockResolvedValue(null);
       mockItemRepository.searchWithRawQuery.mockResolvedValue(mockResults);
@@ -313,14 +317,14 @@ describe('SearchItemsUseCase', () => {
     it('should return cached results when available', async () => {
       const input = createSearchItemsDTO({
         userId: mockUserId,
-        query: 'test'
+        query: 'test',
       });
 
       const cachedResponse = {
         items: [],
         hasNextPage: false,
         totalCount: 0,
-        searchTime: 50
+        searchTime: 50,
       };
 
       mockCache.get.mockResolvedValue(JSON.stringify(cachedResponse));
@@ -334,7 +338,7 @@ describe('SearchItemsUseCase', () => {
     it('should cache search results', async () => {
       const input = createSearchItemsDTO({
         userId: mockUserId,
-        query: 'test'
+        query: 'test',
       });
 
       mockCache.get.mockResolvedValue(null);
@@ -355,14 +359,14 @@ describe('SearchItemsUseCase', () => {
     it('should log slow queries', async () => {
       const input = createSearchItemsDTO({
         userId: mockUserId,
-        query: 'test'
+        query: 'test',
       });
 
       mockCache.get.mockResolvedValue(null);
-      
+
       // Mock slow query
-      mockItemRepository.searchWithRawQuery.mockImplementation(() => 
-        new Promise(resolve => setTimeout(() => resolve([]), 600))
+      mockItemRepository.searchWithRawQuery.mockImplementation(
+        () => new Promise((resolve) => setTimeout(() => resolve([]), 600))
       );
       mockItemRepository.executeRawQuery.mockResolvedValue([{ count: '0' }]);
 
@@ -373,7 +377,7 @@ describe('SearchItemsUseCase', () => {
         expect.objectContaining({
           userId: mockUserId,
           query: 'test',
-          searchTime: expect.any(Number)
+          searchTime: expect.any(Number),
         })
       );
     });
@@ -381,7 +385,7 @@ describe('SearchItemsUseCase', () => {
     it('should include search time in response', async () => {
       const input = createSearchItemsDTO({
         userId: mockUserId,
-        query: 'test'
+        query: 'test',
       });
 
       mockCache.get.mockResolvedValue(null);

@@ -10,11 +10,16 @@ function createClient(url: string, key: string): SupabaseClient {
     storage: {
       from: (bucket: string) => ({
         upload: async (path: string, file: Buffer, options: any) => ({ error: null }),
-        getPublicUrl: (path: string) => ({ data: { publicUrl: `${url}/storage/v1/object/public/${path}` } }),
-        createSignedUrl: async (path: string, expiresIn: number) => ({ data: { signedUrl: `${url}/signed/${path}` }, error: null }),
-        remove: async (paths: string[]) => ({ error: null })
-      })
-    }
+        getPublicUrl: (path: string) => ({
+          data: { publicUrl: `${url}/storage/v1/object/public/${path}` },
+        }),
+        createSignedUrl: async (path: string, expiresIn: number) => ({
+          data: { signedUrl: `${url}/signed/${path}` },
+          error: null,
+        }),
+        remove: async (paths: string[]) => ({ error: null }),
+      }),
+    },
   };
 }
 
@@ -30,10 +35,7 @@ export class SupabaseImageStorageService implements ImageStorageService {
   private bucket = 'covers';
 
   constructor(supabaseClient?: SupabaseClient) {
-    this.supabase = supabaseClient || createClient(
-      env.SUPABASE_URL,
-      env.SUPABASE_SERVICE_ROLE_KEY
-    );
+    this.supabase = supabaseClient || createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
   }
 
   async uploadCover(image: Buffer, itemId: string, userId: string): Promise<string> {
@@ -50,12 +52,10 @@ export class SupabaseImageStorageService implements ImageStorageService {
     await this.deleteCover(path).catch(() => {}); // Ignore if doesn't exist
 
     // Upload to Supabase
-    const { error } = await this.supabase.storage
-      .from(this.bucket)
-      .upload(path, transformedImage, {
-        contentType: 'image/webp',
-        upsert: true
-      });
+    const { error } = await this.supabase.storage.from(this.bucket).upload(path, transformedImage, {
+      contentType: 'image/webp',
+      upsert: true,
+    });
 
     if (error) {
       throw new ProviderAPIError(`Failed to upload image: ${error.message}`);
@@ -65,10 +65,8 @@ export class SupabaseImageStorageService implements ImageStorageService {
   }
 
   getPublicUrl(path: string): string {
-    const { data } = this.supabase.storage
-      .from(this.bucket)
-      .getPublicUrl(path);
-    
+    const { data } = this.supabase.storage.from(this.bucket).getPublicUrl(path);
+
     return data.publicUrl;
   }
 
@@ -85,9 +83,7 @@ export class SupabaseImageStorageService implements ImageStorageService {
   }
 
   async deleteCover(path: string): Promise<void> {
-    const { error } = await this.supabase.storage
-      .from(this.bucket)
-      .remove([path]);
+    const { error } = await this.supabase.storage.from(this.bucket).remove([path]);
 
     if (error) {
       throw new ProviderAPIError(`Failed to delete image: ${error.message}`);
@@ -117,7 +113,7 @@ export class SupabaseImageStorageService implements ImageStorageService {
       return await image
         .resize(400, 600, {
           fit: 'cover',
-          position: 'center'
+          position: 'center',
         })
         .webp({ quality: 85 })
         .toBuffer();

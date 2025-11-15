@@ -14,11 +14,11 @@ describe.skip('PrismaUserRepository', () => {
     prisma = new PrismaClient({
       datasources: {
         db: {
-          url: process.env.DATABASE_URL || 'postgresql://test:test@localhost:5432/test'
-        }
-      }
+          url: process.env.DATABASE_URL || 'postgresql://test:test@localhost:5432/test',
+        },
+      },
     });
-    
+
     repository = new PrismaUserRepository(prisma);
     await prisma.$connect();
   });
@@ -30,7 +30,7 @@ describe.skip('PrismaUserRepository', () => {
   beforeEach(async () => {
     // Clean up database
     await prisma.user.deleteMany();
-    
+
     testUser = new User({
       id: createUserId('test-user-1'),
       username: 'testuser',
@@ -38,7 +38,7 @@ describe.skip('PrismaUserRepository', () => {
       displayName: 'Test User',
       isPublic: true,
       readingStreak: 0,
-      totalItemsRead: 0
+      totalItemsRead: 0,
     });
   });
 
@@ -52,7 +52,7 @@ describe.skip('PrismaUserRepository', () => {
         avatarUrl: testUser.avatarUrl,
         isPublic: testUser.isPublic,
         readingStreak: testUser.readingStreak,
-        totalItemsRead: testUser.totalItemsRead
+        totalItemsRead: testUser.totalItemsRead,
       };
 
       const created = await repository.create(userData);
@@ -71,14 +71,14 @@ describe.skip('PrismaUserRepository', () => {
         displayName: testUser.displayName,
         isPublic: testUser.isPublic,
         readingStreak: testUser.readingStreak,
-        totalItemsRead: testUser.totalItemsRead
+        totalItemsRead: testUser.totalItemsRead,
       };
 
       await repository.create(userData);
 
       const duplicateData = {
         ...userData,
-        email: 'different@example.com'
+        email: 'different@example.com',
       };
 
       await expect(repository.create(duplicateData)).rejects.toThrow(ConflictError);
@@ -91,14 +91,14 @@ describe.skip('PrismaUserRepository', () => {
         displayName: testUser.displayName,
         isPublic: testUser.isPublic,
         readingStreak: testUser.readingStreak,
-        totalItemsRead: testUser.totalItemsRead
+        totalItemsRead: testUser.totalItemsRead,
       };
 
       await repository.create(userData);
 
       const duplicateData = {
         ...userData,
-        username: 'differentuser'
+        username: 'differentuser',
       };
 
       await expect(repository.create(duplicateData)).rejects.toThrow(ConflictError);
@@ -113,7 +113,7 @@ describe.skip('PrismaUserRepository', () => {
         displayName: testUser.displayName,
         isPublic: testUser.isPublic,
         readingStreak: testUser.readingStreak,
-        totalItemsRead: testUser.totalItemsRead
+        totalItemsRead: testUser.totalItemsRead,
       };
 
       const created = await repository.create(userData);
@@ -138,7 +138,7 @@ describe.skip('PrismaUserRepository', () => {
         displayName: testUser.displayName,
         isPublic: testUser.isPublic,
         readingStreak: testUser.readingStreak,
-        totalItemsRead: testUser.totalItemsRead
+        totalItemsRead: testUser.totalItemsRead,
       };
 
       await repository.create(userData);
@@ -162,7 +162,7 @@ describe.skip('PrismaUserRepository', () => {
         displayName: testUser.displayName,
         isPublic: testUser.isPublic,
         readingStreak: testUser.readingStreak,
-        totalItemsRead: testUser.totalItemsRead
+        totalItemsRead: testUser.totalItemsRead,
       };
 
       await repository.create(userData);
@@ -186,14 +186,14 @@ describe.skip('PrismaUserRepository', () => {
         displayName: testUser.displayName,
         isPublic: testUser.isPublic,
         readingStreak: testUser.readingStreak,
-        totalItemsRead: testUser.totalItemsRead
+        totalItemsRead: testUser.totalItemsRead,
       };
 
       const created = await repository.create(userData);
-      
+
       await repository.update(created.id, {
         displayName: 'Updated Name',
-        bio: 'Updated bio'
+        bio: 'Updated bio',
       });
 
       const updated = await repository.findById(created.id);
@@ -202,9 +202,11 @@ describe.skip('PrismaUserRepository', () => {
     });
 
     it('should throw NotFoundError for non-existent user', async () => {
-      await expect(repository.update(createUserId('non-existent'), {
-        displayName: 'Updated Name'
-      })).rejects.toThrow(NotFoundError);
+      await expect(
+        repository.update(createUserId('non-existent'), {
+          displayName: 'Updated Name',
+        })
+      ).rejects.toThrow(NotFoundError);
     });
   });
 
@@ -216,14 +218,14 @@ describe.skip('PrismaUserRepository', () => {
         displayName: testUser.displayName,
         isPublic: testUser.isPublic,
         readingStreak: testUser.readingStreak,
-        totalItemsRead: testUser.totalItemsRead
+        totalItemsRead: testUser.totalItemsRead,
       };
 
       const created = await repository.create(userData);
-      
+
       await repository.updateStats(created.id, {
         readingStreak: 5,
-        totalItemsRead: 10
+        totalItemsRead: 10,
       });
 
       const updated = await repository.findById(created.id);
@@ -232,9 +234,11 @@ describe.skip('PrismaUserRepository', () => {
     });
 
     it('should throw NotFoundError for non-existent user', async () => {
-      await expect(repository.updateStats(createUserId('non-existent'), {
-        readingStreak: 5
-      })).rejects.toThrow(NotFoundError);
+      await expect(
+        repository.updateStats(createUserId('non-existent'), {
+          readingStreak: 5,
+        })
+      ).rejects.toThrow(NotFoundError);
     });
   });
 
@@ -246,7 +250,7 @@ describe.skip('PrismaUserRepository', () => {
         displayName: testUser.displayName,
         isPublic: testUser.isPublic,
         readingStreak: testUser.readingStreak,
-        totalItemsRead: testUser.totalItemsRead
+        totalItemsRead: testUser.totalItemsRead,
       };
 
       const created = await repository.create(userData);
@@ -257,8 +261,7 @@ describe.skip('PrismaUserRepository', () => {
     });
 
     it('should throw NotFoundError for non-existent user', async () => {
-      await expect(repository.delete(createUserId('non-existent')))
-        .rejects.toThrow(NotFoundError);
+      await expect(repository.delete(createUserId('non-existent'))).rejects.toThrow(NotFoundError);
     });
   });
 });

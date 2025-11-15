@@ -13,7 +13,7 @@ import {
   createConflictError,
   transformZodError,
   serializeError,
-  isReadFlexError
+  isReadFlexError,
 } from '../../../src/shared/types/errors';
 
 describe('Error System', () => {
@@ -33,14 +33,39 @@ describe('Error System', () => {
 
     it('should have correct error properties', () => {
       const errors = [
-        { error: new RateLimitError(), code: 'RATE_LIMIT_EXCEEDED', status: 429, shouldReport: false },
+        {
+          error: new RateLimitError(),
+          code: 'RATE_LIMIT_EXCEEDED',
+          status: 429,
+          shouldReport: false,
+        },
         { error: new NotFoundError('test'), code: 'NOT_FOUND', status: 404, shouldReport: false },
-        { error: new ValidationError('test'), code: 'VALIDATION_ERROR', status: 400, shouldReport: false },
-        { error: new AuthorizationError(), code: 'AUTHORIZATION_ERROR', status: 403, shouldReport: false },
+        {
+          error: new ValidationError('test'),
+          code: 'VALIDATION_ERROR',
+          status: 400,
+          shouldReport: false,
+        },
+        {
+          error: new AuthorizationError(),
+          code: 'AUTHORIZATION_ERROR',
+          status: 403,
+          shouldReport: false,
+        },
         { error: new ConflictError('test'), code: 'CONFLICT', status: 409, shouldReport: false },
-        { error: new ProviderAPIError('test'), code: 'PROVIDER_API_ERROR', status: 502, shouldReport: true },
+        {
+          error: new ProviderAPIError('test'),
+          code: 'PROVIDER_API_ERROR',
+          status: 502,
+          shouldReport: true,
+        },
         { error: new OTPExpiredError(), code: 'OTP_EXPIRED', status: 400, shouldReport: false },
-        { error: new ImageTooLargeError(), code: 'IMAGE_TOO_LARGE', status: 413, shouldReport: false }
+        {
+          error: new ImageTooLargeError(),
+          code: 'IMAGE_TOO_LARGE',
+          status: 413,
+          shouldReport: false,
+        },
       ];
 
       errors.forEach(({ error, code, status, shouldReport }) => {
@@ -58,19 +83,17 @@ describe('Error System', () => {
         new AuthorizationError(),
         new ConflictError('test'),
         new OTPExpiredError(),
-        new ImageTooLargeError()
+        new ImageTooLargeError(),
       ];
 
-      const serverErrors = [
-        new ProviderAPIError('test')
-      ];
+      const serverErrors = [new ProviderAPIError('test')];
 
-      clientErrors.forEach(error => {
+      clientErrors.forEach((error) => {
         expect(error.statusCode).toBeGreaterThanOrEqual(400);
         expect(error.statusCode).toBeLessThan(500);
       });
 
-      serverErrors.forEach(error => {
+      serverErrors.forEach((error) => {
         expect(error.statusCode).toBeGreaterThanOrEqual(500);
         expect(error.statusCode).toBeLessThan(600);
       });
@@ -98,7 +121,7 @@ describe('Error System', () => {
   describe('Zod Error Transformation', () => {
     it('should transform single Zod error', () => {
       const schema = z.object({ email: z.string().email() });
-      
+
       try {
         schema.parse({ email: 'invalid-email' });
       } catch (zodError) {
@@ -114,9 +137,9 @@ describe('Error System', () => {
     it('should transform multiple Zod errors', () => {
       const schema = z.object({
         email: z.string().email(),
-        age: z.number().min(18)
+        age: z.number().min(18),
       });
-      
+
       try {
         schema.parse({ email: 'invalid', age: 15 });
       } catch (zodError) {
@@ -140,8 +163,8 @@ describe('Error System', () => {
           message: 'Invalid input',
           userMessage: 'Please check your input and try again.',
           statusCode: 400,
-          context: { field: 'email' }
-        }
+          context: { field: 'email' },
+        },
       });
     });
 
@@ -160,11 +183,26 @@ describe('Error System', () => {
         { error: new RateLimitError(), expected: 'Too many requests. Please try again later.' },
         { error: new NotFoundError('test'), expected: 'The requested resource was not found.' },
         { error: new ValidationError('test'), expected: 'Please check your input and try again.' },
-        { error: new AuthorizationError(), expected: 'You do not have permission to perform this action.' },
-        { error: new ConflictError('test'), expected: 'This resource already exists. Please choose a different value.' },
-        { error: new ProviderAPIError('test'), expected: 'External service is temporarily unavailable. Please try again later.' },
-        { error: new OTPExpiredError(), expected: 'Your verification code has expired. Please request a new one.' },
-        { error: new ImageTooLargeError(), expected: 'Please choose a smaller image file (max 5MB).' }
+        {
+          error: new AuthorizationError(),
+          expected: 'You do not have permission to perform this action.',
+        },
+        {
+          error: new ConflictError('test'),
+          expected: 'This resource already exists. Please choose a different value.',
+        },
+        {
+          error: new ProviderAPIError('test'),
+          expected: 'External service is temporarily unavailable. Please try again later.',
+        },
+        {
+          error: new OTPExpiredError(),
+          expected: 'Your verification code has expired. Please request a new one.',
+        },
+        {
+          error: new ImageTooLargeError(),
+          expected: 'Please choose a smaller image file (max 5MB).',
+        },
       ];
 
       messages.forEach(({ error, expected }) => {
@@ -196,7 +234,7 @@ describe('Error System', () => {
         code: 'NOT_FOUND',
         message: 'User not found',
         statusCode: 404,
-        context: { userId: '123' }
+        context: { userId: '123' },
       });
     });
   });

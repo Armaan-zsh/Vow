@@ -15,31 +15,39 @@ const VolumeInfoSchema = z.object({
   description: z.string().optional(),
   pageCount: z.number().optional(),
   categories: z.array(z.string()).optional(),
-  imageLinks: z.object({
-    thumbnail: z.string().optional(),
-    small: z.string().optional(),
-    medium: z.string().optional(),
-    large: z.string().optional()
-  }).optional(),
-  industryIdentifiers: z.array(z.object({
-    type: z.string(),
-    identifier: z.string()
-  })).optional(),
+  imageLinks: z
+    .object({
+      thumbnail: z.string().optional(),
+      small: z.string().optional(),
+      medium: z.string().optional(),
+      large: z.string().optional(),
+    })
+    .optional(),
+  industryIdentifiers: z
+    .array(
+      z.object({
+        type: z.string(),
+        identifier: z.string(),
+      })
+    )
+    .optional(),
   language: z.string().optional(),
-  publisher: z.string().optional()
+  publisher: z.string().optional(),
 });
 
 const VolumeSchema = z.object({
   id: z.string(),
   volumeInfo: VolumeInfoSchema,
-  saleInfo: z.object({
-    buyLink: z.string().optional()
-  }).optional()
+  saleInfo: z
+    .object({
+      buyLink: z.string().optional(),
+    })
+    .optional(),
 });
 
 const SearchResponseSchema = z.object({
   totalItems: z.number(),
-  items: z.array(VolumeSchema).optional()
+  items: z.array(VolumeSchema).optional(),
 });
 
 const SingleVolumeResponseSchema = VolumeSchema;
@@ -70,7 +78,7 @@ export class GoogleBooksClient {
 
   async search(query: string, maxResults = 10): Promise<SearchResponse> {
     const cacheKey = `gb:search:${this.hashQuery(query, maxResults)}`;
-    
+
     // Try cache first
     const cached = await this.cache.get(cacheKey);
     if (cached) {
@@ -83,18 +91,18 @@ export class GoogleBooksClient {
     const response = await this.makeRequest('/volumes', {
       q: query,
       maxResults,
-      key: this.apiKey
+      key: this.apiKey,
     });
 
     const parsed = SearchResponseSchema.parse(response);
-    
+
     // Cache for 24 hours
     await this.cache.set(cacheKey, JSON.stringify(parsed), 24 * 60 * 60);
-    
-    this.metrics.track('google_books_request', { 
-      type: 'search', 
-      query, 
-      totalItems: parsed.totalItems 
+
+    this.metrics.track('google_books_request', {
+      type: 'search',
+      query,
+      totalItems: parsed.totalItems,
     });
 
     return parsed;
@@ -107,7 +115,7 @@ export class GoogleBooksClient {
     }
 
     const cacheKey = `gb:isbn:${sanitizedISBN}`;
-    
+
     // Try cache first
     const cached = await this.cache.get(cacheKey);
     if (cached) {
@@ -119,14 +127,14 @@ export class GoogleBooksClient {
 
     const searchResponse = await this.search(`isbn:${sanitizedISBN}`, 1);
     const volume = searchResponse.items?.[0] || null;
-    
+
     // Cache for 30 days
     await this.cache.set(cacheKey, JSON.stringify(volume), 30 * 24 * 60 * 60);
-    
-    this.metrics.track('google_books_request', { 
-      type: 'isbn', 
+
+    this.metrics.track('google_books_request', {
+      type: 'isbn',
       isbn: sanitizedISBN,
-      found: !!volume 
+      found: !!volume,
     });
 
     return volume;
@@ -134,7 +142,7 @@ export class GoogleBooksClient {
 
   async getById(id: string): Promise<Volume> {
     const cacheKey = `gb:id:${id}`;
-    
+
     // Try cache first
     const cached = await this.cache.get(cacheKey);
     if (cached) {
@@ -145,14 +153,14 @@ export class GoogleBooksClient {
     this.metrics.track('google_books_cache_miss', { type: 'id', id });
 
     const response = await this.makeRequest(`/volumes/${id}`, {
-      key: this.apiKey
+      key: this.apiKey,
     });
 
     const parsed = SingleVolumeResponseSchema.parse(response);
-    
+
     // Cache for 30 days
     await this.cache.set(cacheKey, JSON.stringify(parsed), 30 * 24 * 60 * 60);
-    
+
     this.metrics.track('google_books_request', { type: 'id', id });
 
     return parsed;
@@ -165,31 +173,31 @@ export class GoogleBooksClient {
       try {
         const response = await ofetch(`${this.baseUrl}${endpoint}`, {
           query: params,
-          timeout: 10000
+          timeout: 10000,
         });
 
         return response;
       } catch (error: any) {
         lastError = error;
-        
+
         // Don't retry on 4xx errors
         if (error.status >= 400 && error.status < 500) {
-          this.metrics.track('google_books_error', { 
-            status: error.status, 
+          this.metrics.track('google_books_error', {
+            status: error.status,
             attempt: attempt + 1,
-            endpoint 
+            endpoint,
           });
           throw error;
         }
 
         // Throw ProviderAPIError on 5xx
         if (error.status >= 500) {
-          this.metrics.track('google_books_error', { 
-            status: error.status, 
+          this.metrics.track('google_books_error', {
+            status: error.status,
             attempt: attempt + 1,
-            endpoint 
+            endpoint,
           });
-          
+
           if (attempt === this.maxRetries - 1) {
             throw new ProviderAPIError(`Google Books API error: ${error.message}`);
           }
@@ -199,12 +207,14 @@ export class GoogleBooksClient {
         if (attempt < this.maxRetries - 1) {
           const delay = this.baseDelay * Math.pow(2, attempt);
           const jitter = Math.random() * 0.1 * delay;
-          await new Promise(resolve => setTimeout(resolve, delay + jitter));
+          await new Promise((resolve) => setTimeout(resolve, delay + jitter));
         }
       }
     }
 
-    throw new ProviderAPIError(`Google Books API failed after ${this.maxRetries} attempts: ${lastError.message}`);
+    throw new ProviderAPIError(
+      `Google Books API failed after ${this.maxRetries} attempts: ${lastError.message}`
+    );
   }
 
   private hashQuery(query: string, maxResults: number): string {
@@ -235,10 +245,10 @@ export class GoogleBooksClient {
     for (let i = 0; i < 9; i++) {
       sum += parseInt(isbn[i]) * (10 - i);
     }
-    
+
     const checkDigit = isbn[9] === 'X' ? 10 : parseInt(isbn[9]);
     sum += checkDigit;
-    
+
     return sum % 11 === 0;
   }
 
@@ -248,10 +258,10 @@ export class GoogleBooksClient {
       const digit = parseInt(isbn[i]);
       sum += i % 2 === 0 ? digit : digit * 3;
     }
-    
+
     const checkDigit = parseInt(isbn[12]);
     const calculatedCheck = (10 - (sum % 10)) % 10;
-    
+
     return checkDigit === calculatedCheck;
   }
 }

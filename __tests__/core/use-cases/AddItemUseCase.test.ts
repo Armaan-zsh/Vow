@@ -6,23 +6,23 @@ import { RateLimitError, ValidationError } from '../../../src/shared/types/error
 const mockItemRepository = {
   countByUserInTimeWindow: jest.fn(),
   create: jest.fn(),
-  transaction: jest.fn()
+  transaction: jest.fn(),
 };
 
 const mockUserRepository = {
-  incrementStats: jest.fn()
+  incrementStats: jest.fn(),
 };
 
 const mockEventEmitter = {
-  emit: jest.fn()
+  emit: jest.fn(),
 };
 
 const mockJobScheduler = {
-  schedule: jest.fn()
+  schedule: jest.fn(),
 };
 
 const mockAuditLogger = {
-  log: jest.fn()
+  log: jest.fn(),
 };
 
 describe('AddItemUseCase', () => {
@@ -48,7 +48,7 @@ describe('AddItemUseCase', () => {
       const input: AddItemDTO = {
         userId: mockUserId,
         title: '',
-        type: ItemType.BOOK
+        type: ItemType.BOOK,
       };
 
       await expect(useCase.execute(input)).rejects.toThrow(ValidationError);
@@ -59,7 +59,7 @@ describe('AddItemUseCase', () => {
         userId: mockUserId,
         title: 'Test Book',
         type: ItemType.BOOK,
-        isbn: 'invalid-isbn'
+        isbn: 'invalid-isbn',
       };
 
       await expect(useCase.execute(input)).rejects.toThrow(ValidationError);
@@ -70,7 +70,7 @@ describe('AddItemUseCase', () => {
         userId: mockUserId,
         title: 'Test Paper',
         type: ItemType.PAPER,
-        doi: 'invalid-doi'
+        doi: 'invalid-doi',
       };
 
       await expect(useCase.execute(input)).rejects.toThrow(ValidationError);
@@ -81,7 +81,7 @@ describe('AddItemUseCase', () => {
         userId: mockUserId,
         title: 'Valid Book',
         type: ItemType.BOOK,
-        isbn: '9780123456789'
+        isbn: '9780123456789',
       };
 
       mockItemRepository.countByUserInTimeWindow.mockResolvedValue(0);
@@ -93,7 +93,7 @@ describe('AddItemUseCase', () => {
         status: ReadingStatus.WANT_TO_READ,
         isPublic: false,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       const result = await useCase.execute(input);
@@ -106,23 +106,20 @@ describe('AddItemUseCase', () => {
       const input: AddItemDTO = {
         userId: mockUserId,
         title: 'Test Book',
-        type: ItemType.BOOK
+        type: ItemType.BOOK,
       };
 
       mockItemRepository.countByUserInTimeWindow.mockResolvedValue(10);
 
       await expect(useCase.execute(input)).rejects.toThrow(RateLimitError);
-      expect(mockItemRepository.countByUserInTimeWindow).toHaveBeenCalledWith(
-        mockUserId,
-        60000
-      );
+      expect(mockItemRepository.countByUserInTimeWindow).toHaveBeenCalledWith(mockUserId, 60000);
     });
 
     it('should allow items within rate limit', async () => {
       const input: AddItemDTO = {
         userId: mockUserId,
         title: 'Test Book',
-        type: ItemType.BOOK
+        type: ItemType.BOOK,
       };
 
       mockItemRepository.countByUserInTimeWindow.mockResolvedValue(5);
@@ -134,7 +131,7 @@ describe('AddItemUseCase', () => {
         status: ReadingStatus.WANT_TO_READ,
         isPublic: false,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       await useCase.execute(input);
@@ -147,7 +144,7 @@ describe('AddItemUseCase', () => {
       const input: AddItemDTO = {
         userId: mockUserId,
         title: 'Test Book',
-        type: ItemType.BOOK
+        type: ItemType.BOOK,
       };
 
       mockItemRepository.countByUserInTimeWindow.mockResolvedValue(0);
@@ -159,7 +156,7 @@ describe('AddItemUseCase', () => {
         status: ReadingStatus.WANT_TO_READ,
         isPublic: false,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       await useCase.execute(input);
@@ -167,7 +164,7 @@ describe('AddItemUseCase', () => {
       expect(mockItemRepository.transaction).toHaveBeenCalled();
       expect(mockUserRepository.incrementStats).toHaveBeenCalledWith(mockUserId, {
         totalItems: 1,
-        bookCount: 1
+        bookCount: 1,
       });
     });
   });
@@ -178,7 +175,7 @@ describe('AddItemUseCase', () => {
         userId: mockUserId,
         title: 'Test Book',
         type: ItemType.BOOK,
-        isbn: '9780123456789'
+        isbn: '9780123456789',
       };
 
       mockItemRepository.countByUserInTimeWindow.mockResolvedValue(0);
@@ -190,7 +187,7 @@ describe('AddItemUseCase', () => {
         status: ReadingStatus.WANT_TO_READ,
         isPublic: false,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       await useCase.execute(input);
@@ -198,7 +195,7 @@ describe('AddItemUseCase', () => {
       expect(mockJobScheduler.schedule).toHaveBeenCalledWith('fetch-metadata', {
         itemId: mockItemId,
         type: 'isbn',
-        value: '9780123456789'
+        value: '9780123456789',
       });
     });
 
@@ -207,7 +204,7 @@ describe('AddItemUseCase', () => {
         userId: mockUserId,
         title: 'Test Paper',
         type: ItemType.PAPER,
-        doi: '10.1000/test'
+        doi: '10.1000/test',
       };
 
       mockItemRepository.countByUserInTimeWindow.mockResolvedValue(0);
@@ -219,7 +216,7 @@ describe('AddItemUseCase', () => {
         status: ReadingStatus.WANT_TO_READ,
         isPublic: false,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       await useCase.execute(input);
@@ -227,7 +224,7 @@ describe('AddItemUseCase', () => {
       expect(mockJobScheduler.schedule).toHaveBeenCalledWith('fetch-metadata', {
         itemId: mockItemId,
         type: 'doi',
-        value: '10.1000/test'
+        value: '10.1000/test',
       });
     });
 
@@ -236,7 +233,7 @@ describe('AddItemUseCase', () => {
         userId: mockUserId,
         title: 'Test Article',
         type: ItemType.ARTICLE,
-        url: 'https://example.com/article'
+        url: 'https://example.com/article',
       };
 
       mockItemRepository.countByUserInTimeWindow.mockResolvedValue(0);
@@ -248,7 +245,7 @@ describe('AddItemUseCase', () => {
         status: ReadingStatus.WANT_TO_READ,
         isPublic: false,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       await useCase.execute(input);
@@ -256,7 +253,7 @@ describe('AddItemUseCase', () => {
       expect(mockJobScheduler.schedule).toHaveBeenCalledWith('fetch-metadata', {
         itemId: mockItemId,
         type: 'url',
-        value: 'https://example.com/article'
+        value: 'https://example.com/article',
       });
     });
   });
@@ -266,7 +263,7 @@ describe('AddItemUseCase', () => {
       const input: AddItemDTO = {
         userId: mockUserId,
         title: 'Test Book',
-        type: ItemType.BOOK
+        type: ItemType.BOOK,
       };
 
       mockItemRepository.countByUserInTimeWindow.mockResolvedValue(0);
@@ -278,7 +275,7 @@ describe('AddItemUseCase', () => {
         status: ReadingStatus.WANT_TO_READ,
         isPublic: false,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       await useCase.execute(input);
@@ -287,7 +284,7 @@ describe('AddItemUseCase', () => {
         itemId: mockItemId,
         userId: mockUserId,
         type: ItemType.BOOK,
-        timestamp: expect.any(Date)
+        timestamp: expect.any(Date),
       });
     });
   });
@@ -297,7 +294,7 @@ describe('AddItemUseCase', () => {
       const input: AddItemDTO = {
         userId: mockUserId,
         title: 'Test Book',
-        type: ItemType.BOOK
+        type: ItemType.BOOK,
       };
 
       mockItemRepository.countByUserInTimeWindow.mockResolvedValue(0);
@@ -309,7 +306,7 @@ describe('AddItemUseCase', () => {
         status: ReadingStatus.WANT_TO_READ,
         isPublic: false,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       await useCase.execute(input);
@@ -317,7 +314,7 @@ describe('AddItemUseCase', () => {
       expect(mockAuditLogger.log).toHaveBeenCalledWith('item.created', mockUserId, {
         itemId: mockItemId,
         title: 'Test Book',
-        type: ItemType.BOOK
+        type: ItemType.BOOK,
       });
     });
   });
@@ -327,7 +324,7 @@ describe('AddItemUseCase', () => {
       const input: AddItemDTO = {
         userId: mockUserId,
         title: 'Test Book',
-        type: ItemType.BOOK
+        type: ItemType.BOOK,
       };
 
       // Simulate race condition - count changes between check and create
@@ -345,12 +342,12 @@ describe('AddItemUseCase', () => {
         status: ReadingStatus.WANT_TO_READ,
         isPublic: false,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       // First call should succeed
       const result1 = useCase.execute(input);
-      
+
       // Second concurrent call should fail due to rate limit
       const result2 = useCase.execute(input);
 

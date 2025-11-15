@@ -17,11 +17,7 @@ describe('SearchItemsUseCase Performance', () => {
     mockCache = { get: jest.fn(), set: jest.fn() };
     mockLogger = { warn: jest.fn() };
 
-    useCase = new SearchItemsUseCase(
-      itemRepository,
-      mockCache,
-      mockLogger
-    );
+    useCase = new SearchItemsUseCase(itemRepository, mockCache, mockLogger);
 
     // Disable caching for performance tests
     mockCache.get.mockResolvedValue(null);
@@ -46,9 +42,9 @@ describe('SearchItemsUseCase Performance', () => {
           readDate: i % 5 === 0 ? new Date(2023, i % 12, (i % 28) + 1) : undefined,
           isPublic: false,
           metadata: {
-            tags: i % 3 === 0 ? ['fiction'] : i % 3 === 1 ? ['non-fiction'] : ['reference']
+            tags: i % 3 === 0 ? ['fiction'] : i % 3 === 1 ? ['non-fiction'] : ['reference'],
           },
-          updatedAt: new Date()
+          updatedAt: new Date(),
         });
         items.push(item);
       }
@@ -60,7 +56,7 @@ describe('SearchItemsUseCase Performance', () => {
       const input = createSearchItemsDTO({
         userId: mockUserId,
         query: 'Test Book',
-        limit: 20
+        limit: 20,
       });
 
       const startTime = Date.now();
@@ -79,7 +75,7 @@ describe('SearchItemsUseCase Performance', () => {
       const input = createSearchItemsDTO({
         userId: mockUserId,
         query: 'Shakespear', // typo
-        limit: 20
+        limit: 20,
       });
 
       const startTime = Date.now();
@@ -101,7 +97,7 @@ describe('SearchItemsUseCase Performance', () => {
         readDateTo: new Date('2023-12-31'),
         tags: ['fiction'],
         sortBy: SortBy.READ_DATE,
-        limit: 20
+        limit: 20,
       });
 
       const startTime = Date.now();
@@ -118,7 +114,7 @@ describe('SearchItemsUseCase Performance', () => {
       const input = createSearchItemsDTO({
         userId: mockUserId,
         query: 'Test',
-        limit: 10
+        limit: 10,
       });
 
       // First page
@@ -132,7 +128,7 @@ describe('SearchItemsUseCase Performance', () => {
       // Second page with cursor
       const input2 = createSearchItemsDTO({
         ...input,
-        cursor: page1.nextCursor
+        cursor: page1.nextCursor,
       });
 
       const startTime2 = Date.now();
@@ -151,7 +147,7 @@ describe('SearchItemsUseCase Performance', () => {
         userId: mockUserId,
         query: 'Author 1',
         sortBy: SortBy.RELEVANCE,
-        limit: 50
+        limit: 50,
       });
 
       const startTime = Date.now();
@@ -162,7 +158,7 @@ describe('SearchItemsUseCase Performance', () => {
 
       expect(searchTime).toBeLessThan(300);
       expect(result.items.length).toBeGreaterThan(0);
-      
+
       // Verify results are sorted by relevance
       for (let i = 1; i < result.items.length; i++) {
         expect(result.items[i - 1].relevanceScore).toBeGreaterThanOrEqual(
@@ -177,7 +173,7 @@ describe('SearchItemsUseCase Performance', () => {
       const input = createSearchItemsDTO({
         userId: mockUserId,
         query: 'memory test',
-        limit: 20
+        limit: 20,
       });
 
       // Create some test data
@@ -196,7 +192,7 @@ describe('SearchItemsUseCase Performance', () => {
           readDate: undefined,
           isPublic: false,
           metadata: {},
-          updatedAt: new Date()
+          updatedAt: new Date(),
         });
       }
 
@@ -204,10 +200,12 @@ describe('SearchItemsUseCase Performance', () => {
 
       // Perform 100 searches
       for (let i = 0; i < 100; i++) {
-        await useCase.execute(createSearchItemsDTO({
-          ...input,
-          query: `memory test ${i % 10}`
-        }));
+        await useCase.execute(
+          createSearchItemsDTO({
+            ...input,
+            query: `memory test ${i % 10}`,
+          })
+        );
       }
 
       const finalMemory = process.memoryUsage().heapUsed;
@@ -239,20 +237,22 @@ describe('SearchItemsUseCase Performance', () => {
           readDate: undefined,
           isPublic: false,
           metadata: {},
-          updatedAt: new Date()
+          updatedAt: new Date(),
         });
       }
 
-      const searches = Array(10).fill(null).map((_, i) => createSearchItemsDTO({
-        userId: mockUserId,
-        query: `Concurrent Test ${i}`,
-        limit: 20
-      }));
+      const searches = Array(10)
+        .fill(null)
+        .map((_, i) =>
+          createSearchItemsDTO({
+            userId: mockUserId,
+            query: `Concurrent Test ${i}`,
+            limit: 20,
+          })
+        );
 
       const startTime = Date.now();
-      const results = await Promise.all(
-        searches.map(search => useCase.execute(search))
-      );
+      const results = await Promise.all(searches.map((search) => useCase.execute(search)));
       const totalTime = Date.now() - startTime;
 
       console.log(`10 concurrent searches completed in ${totalTime}ms`);
@@ -260,7 +260,7 @@ describe('SearchItemsUseCase Performance', () => {
 
       expect(totalTime).toBeLessThan(2000); // 2 seconds for 10 concurrent searches
       expect(results).toHaveLength(10);
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.items.length).toBeGreaterThanOrEqual(0);
       });
     });
@@ -279,7 +279,7 @@ function getRandomTitle(): string {
     'Cooking with Herbs',
     'Travel Guide to Europe',
     'Mathematics for Beginners',
-    'Psychology Today'
+    'Psychology Today',
   ];
   return titles[Math.floor(Math.random() * titles.length)];
 }

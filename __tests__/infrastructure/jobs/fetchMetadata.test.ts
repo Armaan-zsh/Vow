@@ -1,17 +1,17 @@
 // @ts-nocheck
 // Mock MSW
 const http = {
-  get: (url: string, handler: any) => ({ url, handler })
+  get: (url: string, handler: any) => ({ url, handler }),
 };
 const HttpResponse = {
   json: (data: any) => ({ json: data }),
-  text: (data: string) => ({ text: data })
+  text: (data: string) => ({ text: data }),
 };
 const setupServer = (...handlers: any[]) => ({
   listen: () => {},
   close: () => {},
   resetHandlers: () => {},
-  use: () => {}
+  use: () => {},
 });
 
 const server = setupServer(
@@ -19,23 +19,25 @@ const server = setupServer(
   http.get('https://www.googleapis.com/books/v1/volumes', ({ request }) => {
     const url = new URL(request.url);
     const query = url.searchParams.get('q');
-    
+
     if (query?.includes('isbn:9780123456789')) {
       return HttpResponse.json({
-        items: [{
-          volumeInfo: {
-            title: 'Test Book',
-            authors: ['Test Author'],
-            publishedDate: '2023-01-01',
-            description: 'Test description',
-            imageLinks: {
-              thumbnail: 'https://example.com/cover.jpg'
-            }
-          }
-        }]
+        items: [
+          {
+            volumeInfo: {
+              title: 'Test Book',
+              authors: ['Test Author'],
+              publishedDate: '2023-01-01',
+              description: 'Test description',
+              imageLinks: {
+                thumbnail: 'https://example.com/cover.jpg',
+              },
+            },
+          },
+        ],
       });
     }
-    
+
     return HttpResponse.json({ items: [] });
   }),
 
@@ -45,19 +47,21 @@ const server = setupServer(
       return HttpResponse.json({
         message: {
           title: ['Test Paper'],
-          author: [{
-            given: 'John',
-            family: 'Doe'
-          }],
+          author: [
+            {
+              given: 'John',
+              family: 'Doe',
+            },
+          ],
           published: {
-            'date-parts': [[2023]]
+            'date-parts': [[2023]],
           },
           abstract: 'Test abstract',
-          URL: 'https://example.com/paper'
-        }
+          URL: 'https://example.com/paper',
+        },
       });
     }
-    
+
     return HttpResponse.json({ message: {} }, { status: 404 });
   }),
 
@@ -87,8 +91,8 @@ describe.skip('fetchMetadata', () => {
         data: {
           itemId: 'item-1' as any,
           type: 'isbn' as const,
-          value: '9780123456789'
-        }
+          value: '9780123456789',
+        },
       };
 
       expect(mockEvent.data.type).toBe('isbn');
@@ -106,8 +110,8 @@ describe.skip('fetchMetadata', () => {
         data: {
           itemId: 'item-1' as any,
           type: 'isbn' as const,
-          value: '9780123456789'
-        }
+          value: '9780123456789',
+        },
       };
 
       expect(mockEvent.data.type).toBe('isbn');
@@ -120,8 +124,8 @@ describe.skip('fetchMetadata', () => {
         data: {
           itemId: 'item-1' as any,
           type: 'doi' as const,
-          value: '10.1000/test'
-        }
+          value: '10.1000/test',
+        },
       };
 
       expect(mockEvent.data.type).toBe('doi');
@@ -135,8 +139,8 @@ describe.skip('fetchMetadata', () => {
         data: {
           itemId: 'item-1' as any,
           type: 'url' as const,
-          value: 'https://example.com/article'
-        }
+          value: 'https://example.com/article',
+        },
       };
 
       expect(mockEvent.data.type).toBe('url');

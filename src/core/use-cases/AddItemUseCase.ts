@@ -12,9 +12,15 @@ const AddItemDTOSchema = z.object({
   type: z.nativeEnum(ItemType),
   author: z.string().max(200).optional(),
   url: z.string().url().optional(),
-  isbn: z.string().regex(/^(97[89])?\d{9}[\dX]$/, 'Invalid ISBN format').optional(),
-  doi: z.string().regex(/^10\.\d{4,}\/[^\s]+$/, 'Invalid DOI format').optional(),
-  metadata: z.record(z.any()).optional()
+  isbn: z
+    .string()
+    .regex(/^(97[89])?\d{9}[\dX]$/, 'Invalid ISBN format')
+    .optional(),
+  doi: z
+    .string()
+    .regex(/^10\.\d{4,}\/[^\s]+$/, 'Invalid DOI format')
+    .optional(),
+  metadata: z.record(z.any()).optional(),
 });
 
 export type AddItemDTO = z.infer<typeof AddItemDTOSchema> & { userId: UserId };
@@ -44,7 +50,10 @@ interface EventEmitter {
 }
 
 interface JobScheduler {
-  schedule(job: 'fetch-metadata', data: { itemId: ItemId; type: 'isbn' | 'doi' | 'url'; value: string }): Promise<void>;
+  schedule(
+    job: 'fetch-metadata',
+    data: { itemId: ItemId; type: 'isbn' | 'doi' | 'url'; value: string }
+  ): Promise<void>;
 }
 
 interface AuditLogger {
@@ -72,7 +81,7 @@ export class AddItemUseCase {
       validatedInput.userId as UserId,
       AddItemUseCase.RATE_WINDOW_MS
     );
-    
+
     if (recentCount >= AddItemUseCase.RATE_LIMIT) {
       throw new RateLimitError('Rate limit exceeded: Maximum 10 items per minute');
     }
@@ -94,13 +103,13 @@ export class AddItemUseCase {
         readDate: undefined,
         isPublic: false,
         metadata: validatedInput.metadata || {},
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       // Update user stats (idempotent)
       await this.userRepository.incrementStats(validatedInput.userId as UserId, {
         totalItems: 1,
-        [`${validatedInput.type.toLowerCase()}Count`]: 1
+        [`${validatedInput.type.toLowerCase()}Count`]: 1,
       });
 
       return item;
@@ -113,7 +122,7 @@ export class AddItemUseCase {
     await this.auditLogger.log('item.created', validatedInput.userId as UserId, {
       itemId: result.id,
       title: result.title,
-      type: result.type
+      type: result.type,
     });
 
     // Emit domain event AFTER successful save
@@ -121,7 +130,7 @@ export class AddItemUseCase {
       itemId: result.id,
       userId: result.userId,
       type: result.type,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
 
     return this.toDTO(result);
@@ -141,19 +150,19 @@ export class AddItemUseCase {
       await this.jobScheduler.schedule('fetch-metadata', {
         itemId: item.id,
         type: 'isbn',
-        value: input.isbn
+        value: input.isbn,
       });
     } else if (input.doi) {
       await this.jobScheduler.schedule('fetch-metadata', {
         itemId: item.id,
         type: 'doi',
-        value: input.doi
+        value: input.doi,
       });
     } else if (input.url) {
       await this.jobScheduler.schedule('fetch-metadata', {
         itemId: item.id,
         type: 'url',
-        value: input.url
+        value: input.url,
       });
     }
   }
@@ -169,7 +178,7 @@ export class AddItemUseCase {
       status: item.status,
       isPublic: item.isPublic,
       createdAt: item.addedAt,
-      updatedAt: item.updatedAt
+      updatedAt: item.updatedAt,
     };
   }
 }

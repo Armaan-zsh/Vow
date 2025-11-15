@@ -5,14 +5,14 @@ export type ItemId = string & { __brand: 'ItemId' };
 export enum ItemType {
   BOOK = 'BOOK',
   PAPER = 'PAPER',
-  ARTICLE = 'ARTICLE'
+  ARTICLE = 'ARTICLE',
 }
 
 export enum ReadingStatus {
   WANT_TO_READ = 'want-to-read',
   READING = 'reading',
   READ = 'READ',
-  SKIMMED = 'skimmed'
+  SKIMMED = 'skimmed',
 }
 
 export interface ItemConstructorProps {
@@ -75,22 +75,54 @@ export class Item {
   }
 
   // Getters
-  get id(): ItemId { return this._id; }
-  get userId(): UserId { return this._userId; }
-  get type(): ItemType { return this._type; }
-  get title(): string { return this._title; }
-  get author(): string | undefined { return this._author; }
-  get url(): string | undefined { return this._url; }
-  get coverImage(): string | undefined { return this._coverImage; }
-  get publishedYear(): number | undefined { return this._publishedYear; }
-  get status(): ReadingStatus { return this._status; }
-  get rating(): number | undefined { return this._rating; }
-  get notes(): string | undefined { return this._notes; }
-  get readDate(): Date | undefined { return this._readDate; }
-  get isPublic(): boolean { return this._isPublic; }
-  get metadata(): Record<string, any> { return { ...this._metadata }; }
-  get addedAt(): Date { return this._addedAt; }
-  get updatedAt(): Date { return this._updatedAt; }
+  get id(): ItemId {
+    return this._id;
+  }
+  get userId(): UserId {
+    return this._userId;
+  }
+  get type(): ItemType {
+    return this._type;
+  }
+  get title(): string {
+    return this._title;
+  }
+  get author(): string | undefined {
+    return this._author;
+  }
+  get url(): string | undefined {
+    return this._url;
+  }
+  get coverImage(): string | undefined {
+    return this._coverImage;
+  }
+  get publishedYear(): number | undefined {
+    return this._publishedYear;
+  }
+  get status(): ReadingStatus {
+    return this._status;
+  }
+  get rating(): number | undefined {
+    return this._rating;
+  }
+  get notes(): string | undefined {
+    return this._notes;
+  }
+  get readDate(): Date | undefined {
+    return this._readDate;
+  }
+  get isPublic(): boolean {
+    return this._isPublic;
+  }
+  get metadata(): Record<string, any> {
+    return { ...this._metadata };
+  }
+  get addedAt(): Date {
+    return this._addedAt;
+  }
+  get updatedAt(): Date {
+    return this._updatedAt;
+  }
 
   private validateTitle(title: string): void {
     if (!title || title.trim().length === 0) {

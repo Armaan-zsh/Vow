@@ -1,7 +1,7 @@
 export enum ItemType {
   BOOK = 'BOOK',
   PAPER = 'PAPER',
-  ARTICLE = 'ARTICLE'
+  ARTICLE = 'ARTICLE',
 }
 
 export interface AddItemRequest {

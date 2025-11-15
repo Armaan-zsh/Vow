@@ -21,10 +21,12 @@ const optionalInTest = {
   NODE_ENV: z.enum(['test', 'development', 'production']).default('test'),
 };
 
-const envSchema = z.object({
-  ...requiredInProduction,
-  ...optionalInTest,
-}).strict();
+const envSchema = z
+  .object({
+    ...requiredInProduction,
+    ...optionalInTest,
+  })
+  .strict();
 
 export type EnvConfig = z.infer<typeof envSchema>;
 
@@ -42,20 +44,23 @@ export class EnvValidationError extends Error {
 export function validateEnv(): EnvConfig {
   const rawEnv = Object.keys(requiredInProduction)
     .concat(Object.keys(optionalInTest))
-    .reduce((acc, key) => {
-      if (process.env[key] !== undefined) {
-        acc[key] = process.env[key];
-      }
-      return acc;
-    }, {} as Record<string, string>);
+    .reduce(
+      (acc, key) => {
+        if (process.env[key] !== undefined) {
+          acc[key] = process.env[key];
+        }
+        return acc;
+      },
+      {} as Record<string, string>
+    );
 
   const result = envSchema.safeParse(rawEnv);
-  
+
   if (!result.success) {
     const missingKeys: string[] = [];
     const invalidKeys: string[] = [];
-    
-    result.error.errors.forEach(err => {
+
+    result.error.errors.forEach((err) => {
       const key = err.path[0] as string;
       if (err.code === 'invalid_type') {
         missingKeys.push(key);
@@ -64,10 +69,10 @@ export function validateEnv(): EnvConfig {
       }
     });
 
-    const messages = result.error.errors.map(err => {
+    const messages = result.error.errors.map((err) => {
       const key = err.path[0] as string;
       const value = rawEnv[key];
-      let displayValue = value ? `${value.substring(0, 3)}...${value.slice(-3)}` : 'undefined';
+      const displayValue = value ? `${value.substring(0, 3)}...${value.slice(-3)}` : 'undefined';
       return `${key}: ${err.message} (current: ${displayValue})`;
     });
 
@@ -83,4 +88,4 @@ export function validateEnv(): EnvConfig {
 
 export const _envSchemaForTests = envSchema;
 
-export const env = process.env.NODE_ENV === 'test' ? undefined as any : validateEnv();
+export const env = process.env.NODE_ENV === 'test' ? (undefined as any) : validateEnv();
