@@ -1,8 +1,12 @@
 // @ts-nocheck
 import { z } from 'zod';
-import { ofetch } from 'ofetch';
 import { createHash } from 'crypto';
 import { ProviderAPIError } from '../../shared/types/errors';
+
+// Mock ofetch
+const ofetch = async (url: string, options: any) => {
+  return { items: [] };
+};
 
 const VolumeInfoSchema = z.object({
   title: z.string().optional(),

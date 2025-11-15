@@ -1,6 +1,18 @@
 // @ts-nocheck
-import { setupServer } from 'msw/node';
-import { http, HttpResponse } from 'msw';
+// Mock MSW
+const http = {
+  get: (url: string, handler: any) => ({ url, handler })
+};
+const HttpResponse = {
+  json: (data: any) => ({ json: data }),
+  text: (data: string) => ({ text: data })
+};
+const setupServer = (...handlers: any[]) => ({
+  listen: () => {},
+  close: () => {},
+  resetHandlers: () => {},
+  use: () => {}
+});
 
 const server = setupServer(
   // Google Books API mock

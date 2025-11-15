@@ -8,7 +8,7 @@ const mockRedis = {
 
 jest.mock('@upstash/redis', () => ({
   Redis: jest.fn(() => mockRedis)
-}));
+}), { virtual: true });
 
 describe.skip('RateLimiter', () => {
   let rateLimiter: RateLimiter;

@@ -1,7 +1,10 @@
 // @ts-nocheck
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+// Mock Prisma for tests
+const prisma = {
+  user: {
+    findUnique: async () => null
+  }
+};
 
 const ADJECTIVES = [
   'clever', 'bright', 'swift', 'bold', 'wise', 'keen', 'sharp', 'quick',

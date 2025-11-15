@@ -82,7 +82,7 @@ export const cleanupOrphanedImages = inngest.createFunction(
         await step.run(`delete-batch-${Math.floor(i / batchSize)}`, async () => {
           const { error } = await supabase.storage.from('covers').remove(batch);
           if (error) {
-            throw new Error(`Failed to delete batch: ${error.message}`);
+            throw new Error(`Failed to delete batch: ${(error as any).message}`);
           }
           return batch.length;
         });
