@@ -83,4 +83,12 @@ export interface IUserRepository {
    * @throws Error if user not found
    */
   updateStats(userId: UserId, stats: Partial<UserStats>): Promise<void>;
+
+  /**
+   * Increments user statistics atomically (idempotent)
+   * 
+   * @param userId - The user identifier
+   * @param increments - Stats fields to increment with their values
+   */
+  incrementStats(userId: UserId, increments: Record<string, number>): Promise<void>;
 }

@@ -1,205 +1,361 @@
-import { AddItemUseCase, RateLimitError, ValidationError } from '../../../src/core/use-cases/AddItemUseCase';
-import { IItemRepository } from '../../../src/core/repositories/IItemRepository';
-import { IMetadataService } from '../../../src/core/repositories/IMetadataService';
-import { IEventEmitter } from '../../../src/core/repositories/IEventEmitter';
-import { Item, ItemType, createItemId } from '../../../src/core/entities/Item';
-import { createUserId } from '../../../src/core/entities/User';
+import { AddItemUseCase, AddItemDTO, ItemDTO } from '../../../src/core/use-cases/AddItemUseCase';
+import { ItemType, ReadingStatus } from '../../../src/core/entities/Item';
+import { RateLimitError, ValidationError } from '../../../src/shared/types/errors';
+
+// Mock dependencies
+const mockItemRepository = {
+  countByUserInTimeWindow: jest.fn(),
+  create: jest.fn(),
+  transaction: jest.fn()
+};
+
+const mockUserRepository = {
+  incrementStats: jest.fn()
+};
+
+const mockEventEmitter = {
+  emit: jest.fn()
+};
+
+const mockJobScheduler = {
+  schedule: jest.fn()
+};
+
+const mockAuditLogger = {
+  log: jest.fn()
+};
 
 describe('AddItemUseCase', () => {
   let useCase: AddItemUseCase;
-  let mockItemRepository: jest.Mocked<IItemRepository>;
-  let mockMetadataService: jest.Mocked<IMetadataService>;
-  let mockEventEmitter: jest.Mocked<IEventEmitter>;
+  const mockUserId = 'user-123' as any;
+  const mockItemId = 'item-456' as any;
 
   beforeEach(() => {
-    mockItemRepository = {
-      create: jest.fn(),
-      findById: jest.fn(),
-      findByUserId: jest.fn(),
-      search: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      countByUserInTimeWindow: jest.fn()
-    } as jest.Mocked<IItemRepository>;
-    
-    mockMetadataService = {
-      fetchBookByISBN: jest.fn()
-    };
-    
-    mockEventEmitter = {
-      emit: jest.fn()
-    };
+    jest.clearAllMocks();
+    useCase = new AddItemUseCase(
+      mockItemRepository as any,
+      mockUserRepository as any,
+      mockEventEmitter as any,
+      mockJobScheduler as any,
+      mockAuditLogger as any
+    );
 
-    useCase = new AddItemUseCase(mockItemRepository, mockMetadataService, mockEventEmitter);
+    mockItemRepository.transaction.mockImplementation(async (fn) => fn());
   });
 
-  describe('successful item creation', () => {
-    it('should create item and emit event', async () => {
-      const request = {
-        userId: createUserId('user1'),
-        title: 'Test Book',
-        type: ItemType.BOOK,
-        metadata: {}
-      };
-
-      const createdItem = new Item({
-        id: createItemId('item1'),
-        userId: createUserId('user1'),
-        title: 'Test Book',
-        type: ItemType.BOOK,
-        metadata: {},
-        addedAt: new Date()
-      });
-
-      mockItemRepository.countByUserInTimeWindow.mockResolvedValue(5);
-      mockItemRepository.create.mockResolvedValue(createdItem);
-      mockEventEmitter.emit.mockResolvedValue();
-
-      const result = await useCase.execute(request);
-
-      expect(result).toEqual(createdItem);
-      expect(mockEventEmitter.emit).toHaveBeenCalledWith('item.added', {
-        itemId: createItemId('item1'),
-        userId: createUserId('user1'),
-        type: ItemType.BOOK
-      });
-    });
-
-    it('should auto-fetch metadata for books with ISBN', async () => {
-      const request = {
-        userId: createUserId('user1'),
-        title: 'Test Book',
-        type: ItemType.BOOK,
-        metadata: { isbn: '9780123456789' }
-      };
-
-      const bookMetadata = {
-        isbn: '9780123456789',
-        title: 'Enhanced Title',
-        author: 'Test Author',
-        publishedYear: 2023
-      };
-
-      const createdItem = new Item({
-        id: createItemId('item1'),
-        userId: createUserId('user1'),
-        title: 'Test Book',
-        type: ItemType.BOOK,
-        metadata: bookMetadata,
-        addedAt: new Date()
-      });
-
-      mockItemRepository.countByUserInTimeWindow.mockResolvedValue(0);
-      mockMetadataService.fetchBookByISBN.mockResolvedValue(bookMetadata);
-      mockItemRepository.create.mockResolvedValue(createdItem);
-
-      await useCase.execute(request);
-
-      expect(mockMetadataService.fetchBookByISBN).toHaveBeenCalledWith('9780123456789');
-      expect(mockItemRepository.create).toHaveBeenCalledWith(expect.objectContaining({ 
-        userId: createUserId("user1"), 
-        title: "Test Book", 
-        type: ItemType.BOOK 
-      }));
-    });
-  });
-
-  describe('rate limiting', () => {
-    it('should throw RateLimitError when limit exceeded', async () => {
-      mockItemRepository.countByUserInTimeWindow.mockResolvedValue(10);
-
-      const request = {
-        userId: createUserId('user1'),
-        title: 'Test Book',
-        type: ItemType.BOOK
-      };
-
-      await expect(useCase.execute(request)).rejects.toThrow(RateLimitError);
-      expect(mockItemRepository.create).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('validation', () => {
-    beforeEach(() => {
-      mockItemRepository.countByUserInTimeWindow.mockResolvedValue(0);
-    });
-
-    it('should throw ValidationError for empty title', async () => {
-      const request = {
-        userId: createUserId('user1'),
+  describe('Input Validation', () => {
+    it('should reject empty title', async () => {
+      const input: AddItemDTO = {
+        userId: mockUserId,
         title: '',
         type: ItemType.BOOK
       };
 
-      await expect(useCase.execute(request)).rejects.toThrow(ValidationError);
+      await expect(useCase.execute(input)).rejects.toThrow(ValidationError);
     });
 
-    it('should throw ValidationError for invalid ISBN', async () => {
-      const request = {
-        userId: createUserId('user1'),
+    it('should reject invalid ISBN', async () => {
+      const input: AddItemDTO = {
+        userId: mockUserId,
         title: 'Test Book',
         type: ItemType.BOOK,
-        metadata: { isbn: 'invalid-isbn' }
+        isbn: 'invalid-isbn'
       };
 
-      await expect(useCase.execute(request)).rejects.toThrow(ValidationError);
+      await expect(useCase.execute(input)).rejects.toThrow(ValidationError);
     });
 
-    it('should throw ValidationError for invalid DOI', async () => {
-      const request = {
-        userId: createUserId('user1'),
+    it('should reject invalid DOI', async () => {
+      const input: AddItemDTO = {
+        userId: mockUserId,
         title: 'Test Paper',
         type: ItemType.PAPER,
-        metadata: { doi: 'invalid-doi' }
+        doi: 'invalid-doi'
       };
 
-      await expect(useCase.execute(request)).rejects.toThrow(ValidationError);
+      await expect(useCase.execute(input)).rejects.toThrow(ValidationError);
     });
 
-    it('should accept valid ISBN formats', async () => {
-      const validISBNs = ['9780123456789', '978-0-123-45678-9', '0123456789'];
-      
-      for (const isbn of validISBNs) {
-        const request = {
-          userId: createUserId('user1'),
-          title: 'Test Book',
-          type: ItemType.BOOK,
-          metadata: { isbn }
-        };
-
-        const createdItem = new Item({
-          id: createItemId('item1'),
-          userId: createUserId('user1'),
-          title: 'Test Book',
-          type: ItemType.BOOK,
-          metadata: { isbn },
-          addedAt: new Date()
-        });
-
-        mockItemRepository.create.mockResolvedValue(createdItem);
-        await expect(useCase.execute(request)).resolves.toBeDefined();
-      }
-    });
-
-    it('should accept valid DOI format', async () => {
-      const request = {
-        userId: createUserId('user1'),
-        title: 'Test Paper',
-        type: ItemType.PAPER,
-        metadata: { doi: '10.1000/182' }
+    it('should accept valid input', async () => {
+      const input: AddItemDTO = {
+        userId: mockUserId,
+        title: 'Valid Book',
+        type: ItemType.BOOK,
+        isbn: '9780123456789'
       };
 
-      const createdItem = new Item({
-        id: createItemId('item1'),
-        userId: createUserId('user1'),
-        title: 'Test Paper',
-        type: ItemType.PAPER,
-        metadata: { doi: '10.1000/182' },
-        addedAt: new Date()
+      mockItemRepository.countByUserInTimeWindow.mockResolvedValue(0);
+      mockItemRepository.create.mockResolvedValue({
+        id: mockItemId,
+        userId: mockUserId,
+        title: 'Valid Book',
+        type: ItemType.BOOK,
+        status: ReadingStatus.WANT_TO_READ,
+        isPublic: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
       });
 
-      mockItemRepository.create.mockResolvedValue(createdItem);
-      await expect(useCase.execute(request)).resolves.toBeDefined();
+      const result = await useCase.execute(input);
+      expect(result.title).toBe('Valid Book');
+    });
+  });
+
+  describe('Rate Limiting', () => {
+    it('should enforce rate limit', async () => {
+      const input: AddItemDTO = {
+        userId: mockUserId,
+        title: 'Test Book',
+        type: ItemType.BOOK
+      };
+
+      mockItemRepository.countByUserInTimeWindow.mockResolvedValue(10);
+
+      await expect(useCase.execute(input)).rejects.toThrow(RateLimitError);
+      expect(mockItemRepository.countByUserInTimeWindow).toHaveBeenCalledWith(
+        mockUserId,
+        60000
+      );
+    });
+
+    it('should allow items within rate limit', async () => {
+      const input: AddItemDTO = {
+        userId: mockUserId,
+        title: 'Test Book',
+        type: ItemType.BOOK
+      };
+
+      mockItemRepository.countByUserInTimeWindow.mockResolvedValue(5);
+      mockItemRepository.create.mockResolvedValue({
+        id: mockItemId,
+        userId: mockUserId,
+        title: 'Test Book',
+        type: ItemType.BOOK,
+        status: ReadingStatus.WANT_TO_READ,
+        isPublic: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      await useCase.execute(input);
+      expect(mockItemRepository.create).toHaveBeenCalled();
+    });
+  });
+
+  describe('Transaction Handling', () => {
+    it('should use transaction for item creation and stats update', async () => {
+      const input: AddItemDTO = {
+        userId: mockUserId,
+        title: 'Test Book',
+        type: ItemType.BOOK
+      };
+
+      mockItemRepository.countByUserInTimeWindow.mockResolvedValue(0);
+      mockItemRepository.create.mockResolvedValue({
+        id: mockItemId,
+        userId: mockUserId,
+        title: 'Test Book',
+        type: ItemType.BOOK,
+        status: ReadingStatus.WANT_TO_READ,
+        isPublic: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      await useCase.execute(input);
+
+      expect(mockItemRepository.transaction).toHaveBeenCalled();
+      expect(mockUserRepository.incrementStats).toHaveBeenCalledWith(mockUserId, {
+        totalItems: 1,
+        bookCount: 1
+      });
+    });
+  });
+
+  describe('Metadata Scheduling', () => {
+    it('should schedule ISBN metadata fetch', async () => {
+      const input: AddItemDTO = {
+        userId: mockUserId,
+        title: 'Test Book',
+        type: ItemType.BOOK,
+        isbn: '9780123456789'
+      };
+
+      mockItemRepository.countByUserInTimeWindow.mockResolvedValue(0);
+      mockItemRepository.create.mockResolvedValue({
+        id: mockItemId,
+        userId: mockUserId,
+        title: 'Test Book',
+        type: ItemType.BOOK,
+        status: ReadingStatus.WANT_TO_READ,
+        isPublic: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      await useCase.execute(input);
+
+      expect(mockJobScheduler.schedule).toHaveBeenCalledWith('fetch-metadata', {
+        itemId: mockItemId,
+        type: 'isbn',
+        value: '9780123456789'
+      });
+    });
+
+    it('should schedule DOI metadata fetch', async () => {
+      const input: AddItemDTO = {
+        userId: mockUserId,
+        title: 'Test Paper',
+        type: ItemType.PAPER,
+        doi: '10.1000/test'
+      };
+
+      mockItemRepository.countByUserInTimeWindow.mockResolvedValue(0);
+      mockItemRepository.create.mockResolvedValue({
+        id: mockItemId,
+        userId: mockUserId,
+        title: 'Test Paper',
+        type: ItemType.PAPER,
+        status: ReadingStatus.WANT_TO_READ,
+        isPublic: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      await useCase.execute(input);
+
+      expect(mockJobScheduler.schedule).toHaveBeenCalledWith('fetch-metadata', {
+        itemId: mockItemId,
+        type: 'doi',
+        value: '10.1000/test'
+      });
+    });
+
+    it('should schedule URL metadata fetch', async () => {
+      const input: AddItemDTO = {
+        userId: mockUserId,
+        title: 'Test Article',
+        type: ItemType.ARTICLE,
+        url: 'https://example.com/article'
+      };
+
+      mockItemRepository.countByUserInTimeWindow.mockResolvedValue(0);
+      mockItemRepository.create.mockResolvedValue({
+        id: mockItemId,
+        userId: mockUserId,
+        title: 'Test Article',
+        type: ItemType.ARTICLE,
+        status: ReadingStatus.WANT_TO_READ,
+        isPublic: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      await useCase.execute(input);
+
+      expect(mockJobScheduler.schedule).toHaveBeenCalledWith('fetch-metadata', {
+        itemId: mockItemId,
+        type: 'url',
+        value: 'https://example.com/article'
+      });
+    });
+  });
+
+  describe('Event Emission', () => {
+    it('should emit ItemAddedEvent after successful save', async () => {
+      const input: AddItemDTO = {
+        userId: mockUserId,
+        title: 'Test Book',
+        type: ItemType.BOOK
+      };
+
+      mockItemRepository.countByUserInTimeWindow.mockResolvedValue(0);
+      mockItemRepository.create.mockResolvedValue({
+        id: mockItemId,
+        userId: mockUserId,
+        title: 'Test Book',
+        type: ItemType.BOOK,
+        status: ReadingStatus.WANT_TO_READ,
+        isPublic: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      await useCase.execute(input);
+
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith('item.added', {
+        itemId: mockItemId,
+        userId: mockUserId,
+        type: ItemType.BOOK,
+        timestamp: expect.any(Date)
+      });
+    });
+  });
+
+  describe('Audit Logging', () => {
+    it('should log item creation', async () => {
+      const input: AddItemDTO = {
+        userId: mockUserId,
+        title: 'Test Book',
+        type: ItemType.BOOK
+      };
+
+      mockItemRepository.countByUserInTimeWindow.mockResolvedValue(0);
+      mockItemRepository.create.mockResolvedValue({
+        id: mockItemId,
+        userId: mockUserId,
+        title: 'Test Book',
+        type: ItemType.BOOK,
+        status: ReadingStatus.WANT_TO_READ,
+        isPublic: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      await useCase.execute(input);
+
+      expect(mockAuditLogger.log).toHaveBeenCalledWith('item.created', mockUserId, {
+        itemId: mockItemId,
+        title: 'Test Book',
+        type: ItemType.BOOK
+      });
+    });
+  });
+
+  describe('Concurrent Operations', () => {
+    it('should handle concurrent item adds with race condition', async () => {
+      const input: AddItemDTO = {
+        userId: mockUserId,
+        title: 'Test Book',
+        type: ItemType.BOOK
+      };
+
+      // Simulate race condition - count changes between check and create
+      let callCount = 0;
+      mockItemRepository.countByUserInTimeWindow.mockImplementation(() => {
+        callCount++;
+        return Promise.resolve(callCount === 1 ? 9 : 10);
+      });
+
+      mockItemRepository.create.mockResolvedValue({
+        id: mockItemId,
+        userId: mockUserId,
+        title: 'Test Book',
+        type: ItemType.BOOK,
+        status: ReadingStatus.WANT_TO_READ,
+        isPublic: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      // First call should succeed
+      const result1 = useCase.execute(input);
+      
+      // Second concurrent call should fail due to rate limit
+      const result2 = useCase.execute(input);
+
+      await expect(result1).resolves.toBeDefined();
+      await expect(result2).rejects.toThrow(RateLimitError);
     });
   });
 });

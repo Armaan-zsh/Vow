@@ -28,4 +28,5 @@ export interface IItemRepository {
   update(id: ItemId, data: Partial<Omit<Item, 'id' | 'userId' | 'addedAt'>>): Promise<void>;
   delete(id: ItemId): Promise<void>;
   countByUserInTimeWindow(userId: UserId, windowMs: number): Promise<number>;
+  transaction<T>(fn: () => Promise<T>): Promise<T>;
 }

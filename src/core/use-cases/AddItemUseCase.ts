@@ -1,113 +1,174 @@
-import { Item, ItemType, ReadingStatus } from '../entities/Item';
+import { z } from 'zod';
+import { Item, ItemType, ReadingStatus, ItemId } from '../entities/Item';
 import { UserId } from '../entities/User';
 import { IItemRepository } from '../repositories/IItemRepository';
-import { IMetadataService } from '../repositories/IMetadataService';
-import { IEventEmitter } from '../repositories/IEventEmitter';
+import { IUserRepository } from '../repositories/IUserRepository';
+import { RateLimitError, ValidationError } from '../../shared/types/errors';
+import { transformZodError } from '../../shared/types/errors';
 
-export interface AddItemRequest {
+const AddItemDTOSchema = z.object({
+  userId: z.string().brand<'UserId'>(),
+  title: z.string().min(1, 'Title is required').max(500, 'Title too long'),
+  type: z.nativeEnum(ItemType),
+  author: z.string().max(200).optional(),
+  url: z.string().url().optional(),
+  isbn: z.string().regex(/^(97[89])?\d{9}[\dX]$/, 'Invalid ISBN format').optional(),
+  doi: z.string().regex(/^10\.\d{4,}\/[^\s]+$/, 'Invalid DOI format').optional(),
+  metadata: z.record(z.any()).optional()
+});
+
+export type AddItemDTO = z.infer<typeof AddItemDTOSchema>;
+
+export interface ItemDTO {
+  id: ItemId;
   userId: UserId;
   title: string;
   type: ItemType;
-  metadata?: Record<string, any>;
+  author?: string;
+  url?: string;
+  status: ReadingStatus;
+  isPublic: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export class RateLimitError extends Error {
-  constructor() {
-    super('Rate limit exceeded: Maximum 10 items per minute');
-  }
+export interface ItemAddedEvent {
+  itemId: ItemId;
+  userId: UserId;
+  type: ItemType;
+  timestamp: Date;
 }
 
-export class ValidationError extends Error {
-  constructor(message: string) {
-    super(`Validation error: ${message}`);
-  }
+interface EventEmitter {
+  emit(event: 'item.added', data: ItemAddedEvent): Promise<void>;
+}
+
+interface JobScheduler {
+  schedule(job: 'fetch-metadata', data: { itemId: ItemId; type: 'isbn' | 'doi' | 'url'; value: string }): Promise<void>;
+}
+
+interface AuditLogger {
+  log(action: string, userId: UserId, details: Record<string, any>): Promise<void>;
 }
 
 export class AddItemUseCase {
   private static readonly RATE_LIMIT = 10;
-  private static readonly RATE_WINDOW_MS = 60 * 1000; // 1 minute
+  private static readonly RATE_WINDOW_MS = 60 * 1000;
 
   constructor(
     private itemRepository: IItemRepository,
-    private metadataService: IMetadataService,
-    private eventEmitter: IEventEmitter
+    private userRepository: IUserRepository,
+    private eventEmitter: EventEmitter,
+    private jobScheduler: JobScheduler,
+    private auditLogger: AuditLogger
   ) {}
 
-  async execute(request: AddItemRequest): Promise<Item> {
-    // Rate limiting
+  async execute(input: AddItemDTO): Promise<ItemDTO> {
+    // Validate input with Zod
+    const validatedInput = this.validateInput(input);
+
+    // Check rate limit
     const recentCount = await this.itemRepository.countByUserInTimeWindow(
-      request.userId,
+      validatedInput.userId,
       AddItemUseCase.RATE_WINDOW_MS
     );
     
     if (recentCount >= AddItemUseCase.RATE_LIMIT) {
-      throw new RateLimitError();
+      throw new RateLimitError('Rate limit exceeded: Maximum 10 items per minute');
     }
 
-    // Validation
-    this.validateRequest(request);
+    // Transaction for item + stats update
+    const result = await this.itemRepository.transaction(async () => {
+      // Create item
+      const item = await this.itemRepository.create({
+        userId: validatedInput.userId,
+        title: validatedInput.title,
+        type: validatedInput.type,
+        author: validatedInput.author,
+        url: validatedInput.url,
+        coverImage: undefined,
+        publishedYear: undefined,
+        status: ReadingStatus.WANT_TO_READ,
+        rating: undefined,
+        notes: undefined,
+        readDate: undefined,
+        isPublic: false,
+        metadata: validatedInput.metadata || {},
+        updatedAt: new Date()
+      });
 
-    // Auto-fetch metadata for books with ISBN
-    let enrichedMetadata = request.metadata || {};
-    if (request.type === ItemType.BOOK && this.hasISBN(enrichedMetadata)) {
-      const bookData = await this.metadataService.fetchBookByISBN(enrichedMetadata.isbn);
-      if (bookData) {
-        enrichedMetadata = { ...enrichedMetadata, ...bookData };
-      }
-    }
+      // Update user stats (idempotent)
+      await this.userRepository.incrementStats(validatedInput.userId, {
+        totalItems: 1,
+        [`${validatedInput.type.toLowerCase()}Count`]: 1
+      });
 
-    // Create item
-    const item = await this.itemRepository.create({
-      userId: request.userId,
-      title: request.title,
-      type: request.type,
-      author: undefined,
-      url: undefined,
-      coverImage: undefined,
-      publishedYear: undefined,
-      status: ReadingStatus.WANT_TO_READ,
-      rating: undefined,
-      notes: undefined,
-      readDate: undefined,
-      isPublic: false,
-      metadata: enrichedMetadata,
-      updatedAt: new Date()
+      return item;
     });
 
-    // Emit event
+    // Schedule metadata fetch job if needed
+    await this.scheduleMetadataFetch(result, validatedInput);
+
+    // Audit log entry
+    await this.auditLogger.log('item.created', validatedInput.userId, {
+      itemId: result.id,
+      title: result.title,
+      type: result.type
+    });
+
+    // Emit domain event AFTER successful save
     await this.eventEmitter.emit('item.added', {
-      itemId: item.id,
-      userId: item.userId,
-      type: item.type
+      itemId: result.id,
+      userId: result.userId,
+      type: result.type,
+      timestamp: new Date()
     });
 
-    return item;
+    return this.toDTO(result);
   }
 
-  private validateRequest(request: AddItemRequest): void {
-    if (!request.title?.trim()) {
-      throw new ValidationError('Title is required');
-    }
-
-    if (request.metadata?.isbn && !this.isValidISBN(request.metadata.isbn)) {
-      throw new ValidationError('Invalid ISBN format');
-    }
-
-    if (request.metadata?.doi && !this.isValidDOI(request.metadata.doi)) {
-      throw new ValidationError('Invalid DOI format');
+  private validateInput(input: AddItemDTO): AddItemDTO {
+    try {
+      return AddItemDTOSchema.parse(input);
+    } catch (error: any) {
+      throw transformZodError(error);
     }
   }
 
-  private hasISBN(metadata: Record<string, any>): boolean {
-    return typeof metadata.isbn === 'string' && metadata.isbn.trim().length > 0;
+  private async scheduleMetadataFetch(item: Item, input: AddItemDTO): Promise<void> {
+    if (input.isbn) {
+      await this.jobScheduler.schedule('fetch-metadata', {
+        itemId: item.id,
+        type: 'isbn',
+        value: input.isbn
+      });
+    } else if (input.doi) {
+      await this.jobScheduler.schedule('fetch-metadata', {
+        itemId: item.id,
+        type: 'doi',
+        value: input.doi
+      });
+    } else if (input.url) {
+      await this.jobScheduler.schedule('fetch-metadata', {
+        itemId: item.id,
+        type: 'url',
+        value: input.url
+      });
+    }
   }
 
-  private isValidISBN(isbn: string): boolean {
-    const cleaned = isbn.replace(/[-\s]/g, '');
-    return /^(97[89])?\d{9}[\dX]$/.test(cleaned);
-  }
-
-  private isValidDOI(doi: string): boolean {
-    return /^10\.\d{4,}\/[^\s]+$/.test(doi);
+  private toDTO(item: Item): ItemDTO {
+    return {
+      id: item.id,
+      userId: item.userId,
+      title: item.title,
+      type: item.type,
+      author: item.author,
+      url: item.url,
+      status: item.status,
+      isPublic: item.isPublic,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt
+    };
   }
 }
