@@ -7,9 +7,27 @@ import { GetUserProfileUseCase } from '../../src/core/use-cases/GetUserProfileUs
 import { MultiTierCache } from '../../src/infrastructure/cache/MultiTierCache';
 import { ProfileClient } from '../../src/presentation/components/ProfileClient';
 import { ProfileSkeleton } from '../../src/presentation/components/ProfileSkeleton';
+import { ItemDTO } from '../../src/shared/types/ItemDTO';
 
 const prisma = new PrismaClient();
 const cache = new MultiTierCache();
+
+// Convert Item entity to ItemDTO
+function toItemDTO(item: any): ItemDTO {
+  return {
+    id: item.id,
+    title: item.title,
+    author: item.author,
+    type: item.type,
+    coverImage: item.coverImage,
+    publishedYear: item.publishedYear,
+    rating: item.rating,
+    readDate: item.readDate?.toISOString(),
+    status: item.status,
+    tags: item.metadata?.tags || [],
+    addedAt: item.addedAt.toISOString(),
+  };
+}
 
 interface PageProps {
   params: { username: string };
@@ -89,7 +107,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
     <div className="min-h-screen bg-white">
       <ProfileClient
         user={result.user}
-        initialItems={result.items}
+        initialItems={result.items.map(toItemDTO)}
         initialNextCursor={result.nextCursor}
         initialHasNextPage={result.hasNextPage}
       />

@@ -58,20 +58,16 @@ export class GetUserProfileUseCase {
       }
     }
 
-    const items = await this.itemRepo.findMany({
-      where: whereClause,
-      orderBy: { addedAt: 'desc' },
-      take: options.limit + 1, // Fetch one extra to detect next page
+    const items = await this.itemRepo.findByUserId(user.id, {
+      limit: options.limit,
+      cursor: options.cursor
     });
-
-    const hasNextPage = items.length > options.limit;
-    const nextCursor = hasNextPage ? items[items.length - 1].id : null;
 
     return {
       user,
-      items: items.slice(0, options.limit),
-      nextCursor,
-      hasNextPage,
+      items: items.items,
+      nextCursor: items.nextCursor,
+      hasNextPage: items.hasNextPage,
     };
   }
 }

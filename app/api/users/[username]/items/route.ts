@@ -1,12 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { PrismaUserRepository } from '../../../../src/infrastructure/database/PrismaUserRepository';
-import { PrismaItemRepository } from '../../../../src/infrastructure/database/PrismaItemRepository';
-import { ItemType } from '../../../../src/core/entities/Item';
+import { PrismaUserRepository } from '../../../../../src/infrastructure/database/PrismaUserRepository';
+import { PrismaItemRepository } from '../../../../../src/infrastructure/database/PrismaItemRepository';
+import { ItemType } from '../../../../../src/core/entities/Item';
+import { ItemDTO } from '../../../../../src/shared/types/ItemDTO';
 
 const prisma = new PrismaClient();
 const userRepo = new PrismaUserRepository(prisma);
 const itemRepo = new PrismaItemRepository(prisma);
+
+// Convert Item entity to ItemDTO
+function toItemDTO(item: any): ItemDTO {
+  return {
+    id: item.id,
+    title: item.title,
+    author: item.author,
+    type: item.type,
+    coverImage: item.coverImage,
+    publishedYear: item.publishedYear,
+    rating: item.rating,
+    readDate: item.readDate?.toISOString(),
+    status: item.status,
+    tags: item.metadata?.tags || [],
+    addedAt: item.addedAt.toISOString(),
+  };
+}
+
+// Convert Item entity to ItemDTO with proper typing
+function toItemDTOTyped(item: any): ItemDTO {
+  return toItemDTO(item);
+}
 
 export async function GET(
   request: NextRequest,
@@ -45,23 +68,7 @@ export async function GET(
     const result = await itemRepo.findByUserId(user.id, { limit, cursor });
 
     // Convert items to DTO format
-    const items = result.items.map(item => ({
-      id: item.id,
-      title: item.title,
-      type: item.type,
-      status: item.status,
-      rating: item.rating,
-      author: item.author,
-      coverImage: item.coverImage,
-      url: item.url,
-      publishedYear: item.publishedYear,
-      notes: item.notes,
-      readDate: item.readDate?.toISOString(),
-      addedAt: item.addedAt.toISOString(),
-      updatedAt: item.updatedAt.toISOString(),
-      tags: [], // TODO: Implement tags when available
-      isPublic: item.isPublic,
-    }));
+    const items = result.items.map((item: any) => toItemDTOTyped(item));
 
     return NextResponse.json({
       items,

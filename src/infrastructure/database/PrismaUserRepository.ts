@@ -1,15 +1,21 @@
 // @ts-nocheck
-import { PrismaClient, User as PrismaUser, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma, PrismaUser } from '@prisma/client';
 import { IUserRepository } from '../../core/repositories/IUserRepository';
-import { User, UserId, createUserId } from '../../core/entities/User';
-import { NotFoundError, ConflictError, createNotFound } from '../../shared/types/errors';
+import { User, UserId, createUserId, UserStats } from '../../core/entities/User';
+import { createNotFound } from '../../shared/errors/createError';
+
+// Type for Prisma error handling
+interface PrismaKnownError extends Error {
+  code?: string;
+  meta?: any;
+}
 
 export class PrismaUserRepository implements IUserRepository {
   constructor(private prisma: PrismaClient) {}
 
-  async create(user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
+  async create(user: User): Promise<void> {
     try {
-      const prismaUser = await this.prisma.user.create({
+      await this.prisma.user.create({
         data: {
           username: user.username,
           email: user.email,
@@ -19,11 +25,8 @@ export class PrismaUserRepository implements IUserRepository {
           isPublic: user.isPublic,
           readingStreak: user.readingStreak,
           totalItemsRead: user.totalItemsRead,
-          version: 1,
         },
       });
-
-      return this.toDomainEntity(prismaUser);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
@@ -94,7 +97,7 @@ export class PrismaUserRepository implements IUserRepository {
 
   async updateStats(
     id: UserId,
-    stats: { readingStreak?: number; totalItemsRead?: number }
+    stats: Partial<UserStats>
   ): Promise<void> {
     try {
       // Optimistic locking with version increment
@@ -104,8 +107,8 @@ export class PrismaUserRepository implements IUserRepository {
           // Add version check for optimistic locking if needed
         },
         data: {
-          readingStreak: stats.readingStreak,
-          totalItemsRead: stats.totalItemsRead,
+          readingStreak: stats.streakDays,
+          totalItemsRead: stats.totalItems,
           updatedAt: new Date(),
           version: { increment: 1 },
         },
@@ -134,6 +137,37 @@ export class PrismaUserRepository implements IUserRepository {
         if (error.code === 'P2025') {
           throw createNotFound('User', id);
         }
+      }
+      throw error;
+    }
+  }
+
+  async incrementStats(userId: UserId, increments: Record<string, number>): Promise<void> {
+    try {
+      const updateData: any = {};
+      
+      if (increments.totalItems) {
+        updateData.totalItemsRead = {
+          increment: increments.totalItems
+        };
+      }
+      
+      if (increments.readingStreak) {
+        updateData.readingStreak = {
+          increment: increments.readingStreak
+        };
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: updateData,
+        });
+      }
+    } catch (error: unknown) {
+      const prismaError = error as PrismaKnownError;
+      if (prismaError.code === 'P2025') {
+        throw new Error('User not found');
       }
       throw error;
     }
