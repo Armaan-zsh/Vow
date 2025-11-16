@@ -45,19 +45,15 @@ jest.mock('framer-motion');
 
 // =====================================================================
 // FIX 4: Fake timers for ALL tests to prevent timestamp flakiness
+// Note: Fake timers are enabled globally in jest.config.js
 // =====================================================================
 beforeEach(() => {
-  jest.useFakeTimers();
+  // Set system time to fixed date for consistent test results
   jest.setSystemTime(new Date('2024-01-01T00:00:00.000Z'));
 });
 
 afterEach(() => {
-  // Fake timers are enabled globally, so we can safely run pending timers
-  try {
-    jest.runOnlyPendingTimers();
-  } catch (e) {
-    // Ignore if timers aren't enabled for this test
-  }
-  jest.useRealTimers();
+  // Run any pending timers before cleaning up
+  jest.runOnlyPendingTimers();
 });
 
