@@ -1,18 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import FocusLock from 'react-focus-lock';
+import { useEffect } from 'react';
 import { useDebounce } from 'use-debounce';
+import FocusLock from 'react-focus-lock';
 import toast from 'react-hot-toast';
 import { ItemType } from '@/core/entities/Item';
 import { AddItemUseCase } from '@/core/use-cases/AddItemUseCase';
-import { addItemSchema, AddItemFormData } from './AddItemModal/schema';
 import { TypeSelector } from './AddItemModal/TypeSelector';
 import { SearchResults } from './AddItemModal/SearchResults';
 import { ManualForm } from './AddItemModal/ManualForm';
 import { useItemSearch, SearchResult } from '../hooks/useItemSearch';
+import { useAddItemForm } from './AddItemModal/useAddItemForm';
+import { useAddItemSubmit } from './AddItemModal/useAddItemSubmit';
 
 interface AddItemModalProps {
   isOpen: boolean;
@@ -22,28 +21,38 @@ interface AddItemModalProps {
 }
 
 export function AddItemModal({ isOpen, onClose, addItemUseCase, userId }: AddItemModalProps) {
-  const [searchInput, setSearchInput] = useState('');
+  const {
+    form,
+    searchInput,
+    setSearchInput,
+    isSubmitting,
+    setIsSubmitting,
+    selectedType,
+    setValue,
+    resetForm,
+  } = useAddItemForm();
+
   const [debouncedQuery] = useDebounce(searchInput, 300);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { handleSubmit, register, formState: { errors } } = form;
 
-  const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<AddItemFormData>({
-    resolver: zodResolver(addItemSchema),
-    defaultValues: { type: ItemType.BOOK },
-  });
-
-  const selectedType = watch('type');
   const { data: searchData, isLoading: isSearching, error: searchError } = useItemSearch(
     debouncedQuery,
     selectedType,
     isOpen && debouncedQuery.length >= 2
   );
 
+  const { onSubmit } = useAddItemSubmit({
+    addItemUseCase,
+    userId,
+    onSuccess: onClose,
+    setIsSubmitting,
+  });
+
   useEffect(() => {
     if (!isOpen) {
-      reset();
-      setSearchInput('');
+      resetForm();
     }
-  }, [isOpen, reset]);
+  }, [isOpen, resetForm]);
 
   useEffect(() => {
     if (searchError) {
@@ -60,33 +69,6 @@ export function AddItemModal({ isOpen, onClose, addItemUseCase, userId }: AddIte
     setSearchInput('');
   };
 
-  const onSubmit = async (data: AddItemFormData) => {
-    if (isSubmitting) return;
-    
-    setIsSubmitting(true);
-    try {
-      const tags = data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
-      
-      await addItemUseCase.execute({
-        userId: userId as any,
-        title: data.title,
-        type: data.type,
-        author: data.author || undefined,
-        url: data.url || undefined,
-        isbn: data.isbn || undefined,
-        doi: data.doi || undefined,
-        metadata: { tags, notes: data.notes, rating: data.rating, readDate: data.readDate },
-      });
-
-      toast.success('Item added successfully!');
-      onClose();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to add item');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') onClose();
   };
@@ -94,6 +76,10 @@ export function AddItemModal({ isOpen, onClose, addItemUseCase, userId }: AddIte
   if (!isOpen) return null;
 
   const searchResults = searchData?.results || [];
+  const searchPlaceholder = 
+    selectedType === ItemType.BOOK ? 'title or ISBN' :
+    selectedType === ItemType.PAPER ? 'title or DOI' :
+    'title or URL';
 
   return (
     <div 
@@ -132,7 +118,7 @@ export function AddItemModal({ isOpen, onClose, addItemUseCase, userId }: AddIte
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   className="w-full p-2 border-2 border-black font-mono text-sm focus:outline-none focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                  placeholder={`Search by ${selectedType === ItemType.BOOK ? 'title or ISBN' : selectedType === ItemType.PAPER ? 'title or DOI' : 'title or URL'}`}
+                  placeholder={`Search by ${searchPlaceholder}`}
                   aria-label="Search for items"
                 />
                 {(searchResults.length > 0 || isSearching) && (
