@@ -26,21 +26,18 @@ const cardVariants = cva(
   }
 );
 
-const contentVariants = cva(
-  'p-3 flex flex-col justify-between',
-  {
-    variants: {
-      variant: {
-        grid: 'h-[100px]',
-        list: 'flex-1 h-full',
-      },
+const contentVariants = cva('p-3 flex flex-col justify-between', {
+  variants: {
+    variant: {
+      grid: 'h-[100px]',
+      list: 'flex-1 h-full',
     },
-  }
-);
+  },
+});
 
 export const ItemCard = memo(function ItemCard({ item, variant, onEdit }: ItemCardProps) {
   const isGrid = variant === 'grid';
-  
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if ((e.key === 'Enter' || e.key === ' ') && onEdit) {
       e.preventDefault();
@@ -50,10 +47,10 @@ export const ItemCard = memo(function ItemCard({ item, variant, onEdit }: ItemCa
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return null;
-    return new Date(dateString).toLocaleDateString('en-US', { 
-      month: 'short', 
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
       day: 'numeric',
-      year: 'numeric' 
+      year: 'numeric',
     });
   };
 
@@ -74,7 +71,9 @@ export const ItemCard = memo(function ItemCard({ item, variant, onEdit }: ItemCa
       aria-label={`${item.title} by ${item.author || 'Unknown author'}${onEdit ? ' - Click to edit' : ''}`}
     >
       {/* Cover Image */}
-      <div className={isGrid ? 'w-full h-[200px] relative' : 'w-[80px] h-full flex-shrink-0 relative'}>
+      <div
+        className={isGrid ? 'w-full h-[200px] relative' : 'w-[80px] h-full flex-shrink-0 relative'}
+      >
         <CoverImage
           src={item.coverImage}
           alt={`Cover of ${item.title}`}
@@ -87,10 +86,12 @@ export const ItemCard = memo(function ItemCard({ item, variant, onEdit }: ItemCa
       {/* Content */}
       <div className={contentVariants({ variant })}>
         <div>
-          <h3 className={`font-black text-black leading-tight mb-1 font-mono ${isGrid ? 'text-sm' : 'text-base'}`}>
+          <h3
+            className={`font-black text-black leading-tight mb-1 font-mono ${isGrid ? 'text-sm' : 'text-base'}`}
+          >
             {item.title}
           </h3>
-          
+
           {item.author && (
             <p className={`font-bold text-gray-700 font-mono ${isGrid ? 'text-xs' : 'text-sm'}`}>
               {item.author}

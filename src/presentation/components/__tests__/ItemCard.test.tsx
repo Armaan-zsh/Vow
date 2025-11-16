@@ -30,7 +30,7 @@ const mockPaper: ItemDTO = {
 describe('ItemCard', () => {
   it('renders book in grid variant', () => {
     render(<ItemCard item={mockBook} variant="grid" />);
-    
+
     expect(screen.getByText('The Pragmatic Programmer')).toBeInTheDocument();
     expect(screen.getByText('David Thomas')).toBeInTheDocument();
     expect(screen.getByText('BOOK')).toBeInTheDocument();
@@ -40,7 +40,7 @@ describe('ItemCard', () => {
 
   it('renders paper in list variant', () => {
     render(<ItemCard item={mockPaper} variant="list" />);
-    
+
     expect(screen.getByText('Attention Is All You Need')).toBeInTheDocument();
     expect(screen.getByText('Vaswani et al.')).toBeInTheDocument();
     expect(screen.getByText('PAPER')).toBeInTheDocument();
@@ -48,28 +48,28 @@ describe('ItemCard', () => {
 
   it('displays rating stars correctly', () => {
     render(<ItemCard item={mockBook} variant="grid" />);
-    
+
     const ratingElement = screen.getByLabelText('Rating: 5 out of 5 stars');
     expect(ratingElement).toBeInTheDocument();
   });
 
   it('displays read date when available', () => {
     render(<ItemCard item={mockBook} variant="grid" />);
-    
+
     expect(screen.getByText('Read: Jan 15, 2024')).toBeInTheDocument();
   });
 
   it('shows fallback icon when no cover image', () => {
     const itemWithoutCover = { ...mockBook, coverImage: undefined };
     render(<ItemCard item={itemWithoutCover} variant="grid" />);
-    
+
     expect(screen.getByTestId('fallback-icon')).toBeInTheDocument();
   });
 
   it('calls onEdit when clicked', () => {
     const onEdit = jest.fn();
     render(<ItemCard item={mockBook} variant="grid" onEdit={onEdit} />);
-    
+
     fireEvent.click(screen.getByRole('button'));
     expect(onEdit).toHaveBeenCalledTimes(1);
   });
@@ -77,7 +77,7 @@ describe('ItemCard', () => {
   it('calls onEdit on Enter key press', () => {
     const onEdit = jest.fn();
     render(<ItemCard item={mockBook} variant="grid" onEdit={onEdit} />);
-    
+
     const card = screen.getByRole('button');
     fireEvent.keyDown(card, { key: 'Enter' });
     expect(onEdit).toHaveBeenCalledTimes(1);
@@ -86,7 +86,7 @@ describe('ItemCard', () => {
   it('calls onEdit on Space key press', () => {
     const onEdit = jest.fn();
     render(<ItemCard item={mockBook} variant="grid" onEdit={onEdit} />);
-    
+
     const card = screen.getByRole('button');
     fireEvent.keyDown(card, { key: ' ' });
     expect(onEdit).toHaveBeenCalledTimes(1);
@@ -94,14 +94,14 @@ describe('ItemCard', () => {
 
   it('does not show edit overlay when onEdit not provided', () => {
     render(<ItemCard item={mockBook} variant="grid" />);
-    
+
     expect(screen.queryByText('EDIT')).not.toBeInTheDocument();
     expect(screen.getByRole('article')).toBeInTheDocument();
   });
 
   it('shows edit overlay when onEdit provided', () => {
     render(<ItemCard item={mockBook} variant="grid" onEdit={() => {}} />);
-    
+
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
 
@@ -111,7 +111,7 @@ describe('ItemCard', () => {
       tags: ['tag1', 'tag2', 'tag3', 'tag4', 'tag5'],
     };
     render(<ItemCard item={itemWithManyTags} variant="grid" />);
-    
+
     expect(screen.getByText('tag1')).toBeInTheDocument();
     expect(screen.getByText('tag2')).toBeInTheDocument();
     expect(screen.queryByText('tag3')).not.toBeInTheDocument();
@@ -123,7 +123,7 @@ describe('ItemCard', () => {
       tags: ['tag1', 'tag2', 'tag3', 'tag4', 'tag5'],
     };
     render(<ItemCard item={itemWithManyTags} variant="list" />);
-    
+
     expect(screen.getByText('tag1')).toBeInTheDocument();
     expect(screen.getByText('tag2')).toBeInTheDocument();
     expect(screen.getByText('tag3')).toBeInTheDocument();
@@ -139,18 +139,21 @@ describe('ItemCard', () => {
       status: 'want-to-read',
       addedAt: '2024-01-01',
     };
-    
+
     render(<ItemCard item={minimalItem} variant="grid" />);
-    
+
     expect(screen.getByText('Minimal Item')).toBeInTheDocument();
     expect(screen.getByText('ARTICLE')).toBeInTheDocument();
   });
 
   it('has proper ARIA labels', () => {
     render(<ItemCard item={mockBook} variant="grid" onEdit={() => {}} />);
-    
+
     const card = screen.getByRole('button');
-    expect(card).toHaveAttribute('aria-label', 'The Pragmatic Programmer by David Thomas - Click to edit');
+    expect(card).toHaveAttribute(
+      'aria-label',
+      'The Pragmatic Programmer by David Thomas - Click to edit'
+    );
   });
 
   it('has no accessibility violations', async () => {
@@ -161,10 +164,10 @@ describe('ItemCard', () => {
 
   it('renders efficiently with React.memo', () => {
     const { rerender } = render(<ItemCard item={mockBook} variant="grid" />);
-    
+
     // Same props should not cause re-render
     rerender(<ItemCard item={mockBook} variant="grid" />);
-    
+
     expect(screen.getByText('The Pragmatic Programmer')).toBeInTheDocument();
   });
 
@@ -177,7 +180,7 @@ describe('ItemCard', () => {
       }));
 
       const start = performance.now();
-      
+
       render(
         <div>
           {items.map((item) => (
@@ -188,7 +191,7 @@ describe('ItemCard', () => {
 
       const end = performance.now();
       const renderTime = end - start;
-      
+
       // Should render 100 cards in under 100ms
       expect(renderTime).toBeLessThan(100);
       expect(screen.getAllByText(/Book \d+/)).toHaveLength(100);

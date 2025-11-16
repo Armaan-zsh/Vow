@@ -10,7 +10,7 @@ interface CoverImageProps {
 
 const typeIcons = {
   BOOK: '📚',
-  PAPER: '📄', 
+  PAPER: '📄',
   ARTICLE: '📰',
 };
 

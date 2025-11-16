@@ -11,11 +11,7 @@ export const RatingStars = memo(function RatingStars({ rating, variant }: Rating
   const starSize = variant === 'grid' ? 'text-xs' : 'text-sm';
 
   return (
-    <div 
-      className="flex font-mono"
-      aria-label={`Rating: ${rating} out of 5 stars`}
-      role="img"
-    >
+    <div className="flex font-mono" aria-label={`Rating: ${rating} out of 5 stars`} role="img">
       {[...Array(5)].map((_, i) => (
         <span
           key={i}
