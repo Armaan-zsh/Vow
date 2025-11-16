@@ -5,7 +5,7 @@ import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { useQueryStates } from 'nuqs';
 import { parseAsString, parseAsArrayOf, parseAsIsoDateTime } from 'nuqs';
 import { User } from '../../core/entities/User';
-import { Item } from '../../core/entities/Item';
+import { ItemDTO } from '../../shared/types/ItemDTO';
 import { ItemType } from '../../core/entities/Item';
 import { ItemCard } from './ItemCard';
 import { ShareModal } from './ShareModal';
@@ -13,7 +13,7 @@ import { FollowButton } from './FollowButton';
 
 interface ProfileClientProps {
   user: User;
-  initialItems: Item[];
+  initialItems: ItemDTO[];
   initialNextCursor: string | null;
   initialHasNextPage: boolean;
 }
@@ -27,20 +27,21 @@ export function ProfileClient({ user, initialItems, initialNextCursor, initialHa
     end: parseAsIsoDateTime,
   });
 
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery({
-    queryKey: ['profile', user.username, filters],
+  interface ItemsPage {
+  items: ItemDTO[];
+  nextCursor: string | null;
+  hasNextPage: boolean;
+}
+
+const { data, fetchNextPage, hasNextPage, isFetchingNextPage, error } = useInfiniteQuery<ItemsPage>({
+    queryKey: ['userItems', user.username, filters],
     queryFn: async ({ pageParam = null }) => {
       const searchParams = new URLSearchParams();
       if (filters.type) searchParams.set('type', filters.type);
       if (filters.tags) searchParams.set('tags', filters.tags.join(','));
       if (filters.start) searchParams.set('start', filters.start.toISOString());
       if (filters.end) searchParams.set('end', filters.end.toISOString());
-      if (pageParam) searchParams.set('cursor', pageParam);
+      if (pageParam) searchParams.set('cursor', pageParam as string);
 
       const response = await fetch(`/api/users/${user.username}/items?${searchParams}`);
       if (!response.ok) {
@@ -48,11 +49,12 @@ export function ProfileClient({ user, initialItems, initialNextCursor, initialHa
       }
       return response.json();
     },
+    initialPageParam: null,
     initialData: {
       pages: [{ items: initialItems, nextCursor: initialNextCursor, hasNextPage: initialHasNextPage }],
       pageParams: [null],
     },
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    getNextPageParam: (lastPage: ItemsPage) => lastPage.nextCursor || undefined,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -161,7 +163,7 @@ export function ProfileClient({ user, initialItems, initialNextCursor, initialHa
       {/* Items Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {allItems.map((item) => (
-          <ItemCard key={item.id} item={item} />
+          <ItemCard key={item.id} item={item} variant="grid" />
         ))}
       </div>
 
