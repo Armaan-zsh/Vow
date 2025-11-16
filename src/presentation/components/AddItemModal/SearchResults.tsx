@@ -1,15 +1,5 @@
 import { memo } from 'react';
-
-interface SearchResult {
-  id: string;
-  title: string;
-  author?: string;
-  isbn?: string;
-  doi?: string;
-  url?: string;
-  coverImage?: string;
-  publishedYear?: number;
-}
+import { SearchResult } from '../../hooks/useItemSearch';
 
 interface SearchResultsProps {
   results: SearchResult[];
