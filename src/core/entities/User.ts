@@ -14,6 +14,7 @@ export interface UserStats {
   readonly articlesCount: number;
   readonly streakDays: number;
   readonly lastReadDate: Date | null;
+  readonly followers?: number;
 }
 
 export interface UserConstructorProps {
@@ -27,6 +28,8 @@ export interface UserConstructorProps {
   stats?: Partial<UserStats>;
   createdAt?: Date;
   updatedAt?: Date;
+  avatarUrl?: string;
+  bio?: string;
 }
 
 export class User {
@@ -40,6 +43,8 @@ export class User {
   private readonly _stats: UserStats;
   private readonly _createdAt: Date;
   private readonly _updatedAt: Date;
+  private readonly _avatarUrl?: string;
+  private readonly _bio?: string;
 
   constructor(props: UserConstructorProps) {
     this.validateUsername(props.username);
@@ -51,6 +56,8 @@ export class User {
     this._name = props.name;
     this._profileVisibility = props.profileVisibility ?? ProfileVisibility.PUBLIC;
     this._isVerified = props.isVerified ?? false;
+    this._avatarUrl = props.avatarUrl;
+    this._bio = props.bio;
     this._stats = {
       totalItems: props.stats?.totalItems ?? 0,
       booksCount: props.stats?.booksCount ?? 0,
@@ -58,6 +65,7 @@ export class User {
       articlesCount: props.stats?.articlesCount ?? 0,
       streakDays: props.stats?.streakDays ?? 0,
       lastReadDate: props.stats?.lastReadDate ?? null,
+      followers: props.stats?.followers ?? 0,
     };
     this._createdAt = props.createdAt ?? new Date();
     this._updatedAt = props.updatedAt ?? new Date();
@@ -93,6 +101,12 @@ export class User {
   }
   get updatedAt(): Date {
     return this._updatedAt;
+  }
+  get avatarUrl(): string | undefined {
+    return this._avatarUrl;
+  }
+  get bio(): string | undefined {
+    return this._bio;
   }
 
   // Business logic methods
