@@ -76,7 +76,7 @@ describe('UpdateReadingStreakUseCase', () => {
           { userId: 'user1', currentStreak: 5 },
           { userId: 'user2', currentStreak: 0 },
         ])
-        .mockResolvedValueOnce(undefined); // Update query
+        .mockResolvedValueOnce([]); // Update query
 
       await useCase.executeBatch(userIds);
 
@@ -115,7 +115,7 @@ describe('UpdateReadingStreakUseCase', () => {
       // Mock no users with reads yesterday
       mockItemRepository.executeRawQuery
         .mockResolvedValueOnce([]) // No reads found
-        .mockResolvedValueOnce(undefined); // Update query
+        .mockResolvedValueOnce([]); // Update query
 
       await useCase.executeBatch(userIds);
 
@@ -140,7 +140,7 @@ describe('UpdateReadingStreakUseCase', () => {
         .mockResolvedValueOnce([
           { userId: 'user1', currentStreak: 10 },
         ])
-        .mockResolvedValueOnce(undefined);
+        .mockResolvedValueOnce([]);
 
       await useCase.executeBatch(userIds);
 
@@ -160,7 +160,7 @@ describe('UpdateReadingStreakUseCase', () => {
           { userId: 'user1', currentStreak: 6 }, // Will reach 7-day milestone
           { userId: 'user2', currentStreak: 29 }, // Will reach 30-day milestone
         ])
-        .mockResolvedValueOnce(undefined);
+        .mockResolvedValueOnce([]);
 
       await useCase.executeBatch(userIds);
 
@@ -207,7 +207,7 @@ describe('UpdateReadingStreakUseCase', () => {
           { userId: 'user3', currentStreak: 364 }, // 365 days
           { userId: 'user4', currentStreak: 50 },  // No milestone
         ])
-        .mockResolvedValueOnce(undefined);
+        .mockResolvedValueOnce([]);
 
       await useCase.executeBatch(userIds);
 
@@ -229,7 +229,7 @@ describe('UpdateReadingStreakUseCase', () => {
       
       mockItemRepository.executeRawQuery
         .mockResolvedValue([{ userId: 'user1', currentStreak: 5 }])
-        .mockResolvedValueOnce(undefined);
+        .mockResolvedValueOnce([]);
 
       // Run twice
       await useCase.executeBatch(userIds);
@@ -246,7 +246,7 @@ describe('UpdateReadingStreakUseCase', () => {
       const userIds = [createUserId('user1')];
       mockItemRepository.executeRawQuery
         .mockResolvedValueOnce([])
-        .mockResolvedValueOnce(undefined);
+        .mockResolvedValueOnce([]);
 
       await useCase.executeBatch(userIds);
 
@@ -280,7 +280,7 @@ describe('UpdateReadingStreakUseCase', () => {
       
       mockItemRepository.executeRawQuery
         .mockResolvedValueOnce([])
-        .mockResolvedValueOnce(undefined);
+        .mockResolvedValueOnce([]);
 
       await useCase.executeBatch(userIds);
 
@@ -290,7 +290,7 @@ describe('UpdateReadingStreakUseCase', () => {
       // Verify batch update includes all users
       const updateCall = mockItemRepository.executeRawQuery.mock.calls[1];
       expect(updateCall[0]).toContain('WHERE id IN');
-      expect(updateCall[1]).toHaveLength(3002); // 1000*2 (cases) + 2 (dates) + 1000 (WHERE IN)
+      expect(updateCall[1]).toHaveLength(2002); // 1000 (cases) + 2 (dates) + 1000 (WHERE IN)
     });
   });
 });
