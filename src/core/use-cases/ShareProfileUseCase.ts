@@ -7,7 +7,7 @@ import { transformZodError } from '../../shared/types/errors';
 const ShareProfileDTOSchema = z.object({
   userId: z.string(),
   requestingUserId: z.string(),
-  expiresIn: z.number().min(300).max(86400).default(3600) // 5min to 24h, default 1h
+  expiresIn: z.number().min(300).max(86400).default(3600), // 5min to 24h, default 1h
 });
 
 export type ShareProfileDTO = z.infer<typeof ShareProfileDTOSchema> & {
@@ -70,7 +70,7 @@ export class ShareProfileUseCase {
     await this.analytics.track('profile_shared', validatedInput.requestingUserId, {
       sharedUserId: validatedInput.userId,
       visibility: user.profileVisibility,
-      isPublic: result.isPublic
+      isPublic: result.isPublic,
     });
 
     // Audit log
@@ -78,7 +78,7 @@ export class ShareProfileUseCase {
       sharedUserId: validatedInput.userId,
       visibility: user.profileVisibility,
       url: result.url,
-      expiresAt: result.expiresAt
+      expiresAt: result.expiresAt,
     });
 
     return result;
@@ -90,14 +90,17 @@ export class ShareProfileUseCase {
       return {
         ...parsed,
         userId: input.userId,
-        requestingUserId: input.requestingUserId
+        requestingUserId: input.requestingUserId,
       };
     } catch (error: any) {
       throw transformZodError(error);
     }
   }
 
-  private async checkPermissions(visibility: ProfileVisibility, input: ShareProfileDTO): Promise<void> {
+  private async checkPermissions(
+    visibility: ProfileVisibility,
+    input: ShareProfileDTO
+  ): Promise<void> {
     if (visibility === ProfileVisibility.PRIVATE) {
       // Only owner can share private profiles
       if (input.userId !== input.requestingUserId) {
@@ -110,14 +113,14 @@ export class ShareProfileUseCase {
     const baseMetadata = {
       title: `${user.name || user.username}'s Reading Profile`,
       description: `Check out ${user.username}'s reading collection on ReadFlex`,
-      username: user.username
+      username: user.username,
     };
 
     if (user.profileVisibility === ProfileVisibility.PUBLIC) {
       return {
         url: `/@${user.username}`,
         isPublic: true,
-        metadata: baseMetadata
+        metadata: baseMetadata,
       };
     }
 
@@ -127,7 +130,7 @@ export class ShareProfileUseCase {
       {
         userId: input.userId,
         type: 'profile_share',
-        exp: Math.floor(expiresAt.getTime() / 1000)
+        exp: Math.floor(expiresAt.getTime() / 1000),
       },
       input.expiresIn
     );
@@ -140,7 +143,7 @@ export class ShareProfileUseCase {
       url: `/share/${token}`,
       isPublic: false,
       expiresAt,
-      metadata: baseMetadata
+      metadata: baseMetadata,
     };
   }
 }

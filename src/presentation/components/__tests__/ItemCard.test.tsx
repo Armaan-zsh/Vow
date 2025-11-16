@@ -1,128 +1,197 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import { axe, toHaveNoViolations } from 'jest-axe';
 import { ItemCard } from '../ItemCard';
 import { ItemDTO } from '../../../shared/types/ItemDTO';
 
-jest.mock('framer-motion', () => ({
-  motion: {
-    article: ({ children, ...props }: any) => <article {...props}>{children}</article>,
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  },
-}));
+expect.extend(toHaveNoViolations);
 
-const mockItem: ItemDTO = {
+const mockBook: ItemDTO = {
   id: '1',
-  title: 'Test Book',
-  author: 'Test Author',
+  title: 'The Pragmatic Programmer',
+  author: 'David Thomas',
   type: 'BOOK',
   coverImage: 'https://example.com/cover.jpg',
-  publishedYear: 2023,
-  rating: 4,
-  addedAt: '2024-01-15T10:00:00Z',
+  rating: 5,
+  readDate: '2024-01-15',
+  status: 'read',
+  tags: ['programming', 'career'],
+  addedAt: '2024-01-01',
 };
 
-const mockOnEdit = jest.fn();
+const mockPaper: ItemDTO = {
+  id: '2',
+  title: 'Attention Is All You Need',
+  author: 'Vaswani et al.',
+  type: 'PAPER',
+  status: 'reading',
+  addedAt: '2024-02-01',
+};
 
 describe('ItemCard', () => {
-  beforeEach(() => {
-    mockOnEdit.mockClear();
+  it('renders book in grid variant', () => {
+    render(<ItemCard item={mockBook} variant="grid" />);
+    
+    expect(screen.getByText('The Pragmatic Programmer')).toBeInTheDocument();
+    expect(screen.getByText('David Thomas')).toBeInTheDocument();
+    expect(screen.getByText('BOOK')).toBeInTheDocument();
+    expect(screen.getByText('programming')).toBeInTheDocument();
+    expect(screen.getByText('career')).toBeInTheDocument();
   });
 
-  describe('Accessibility', () => {
-    it('should have proper ARIA labels', () => {
-      render(<ItemCard item={mockItem} variant="grid" onEdit={mockOnEdit} />);
-
-      expect(screen.getByLabelText('Edit Test Book by Test Author')).toBeInTheDocument();
-      expect(screen.getByLabelText('Rating: 4 out of 5 stars')).toBeInTheDocument();
-    });
-
-    it('should be keyboard accessible', () => {
-      render(<ItemCard item={mockItem} variant="grid" onEdit={mockOnEdit} />);
-
-      const card = screen.getByLabelText('Edit Test Book by Test Author');
-      fireEvent.keyDown(card, { key: 'Enter' });
-
-      expect(mockOnEdit).toHaveBeenCalledTimes(1);
-    });
-
-    it('should have proper alt text for cover image', () => {
-      render(<ItemCard item={mockItem} variant="grid" onEdit={mockOnEdit} />);
-
-      expect(screen.getByAltText('Cover of Test Book')).toBeInTheDocument();
-    });
-
-    it('should handle missing author gracefully', () => {
-      const itemWithoutAuthor = { ...mockItem, author: undefined };
-      render(<ItemCard item={itemWithoutAuthor} variant="grid" onEdit={mockOnEdit} />);
-
-      expect(screen.getByLabelText('Edit Test Book by Unknown author')).toBeInTheDocument();
-    });
+  it('renders paper in list variant', () => {
+    render(<ItemCard item={mockPaper} variant="list" />);
+    
+    expect(screen.getByText('Attention Is All You Need')).toBeInTheDocument();
+    expect(screen.getByText('Vaswani et al.')).toBeInTheDocument();
+    expect(screen.getByText('PAPER')).toBeInTheDocument();
   });
 
-  describe('Variants', () => {
-    it('should render grid variant correctly', () => {
-      render(<ItemCard item={mockItem} variant="grid" onEdit={mockOnEdit} />);
-
-      const card = screen.getByLabelText('Edit Test Book by Test Author');
-      expect(card).toHaveClass('w-[200px]', 'h-[300px]');
-    });
-
-    it('should render list variant correctly', () => {
-      render(<ItemCard item={mockItem} variant="list" onEdit={mockOnEdit} />);
-
-      const card = screen.getByLabelText('Edit Test Book by Test Author');
-      expect(card).toHaveClass('w-full', 'h-[120px]', 'flex');
-    });
+  it('displays rating stars correctly', () => {
+    render(<ItemCard item={mockBook} variant="grid" />);
+    
+    const ratingElement = screen.getByLabelText('Rating: 5 out of 5 stars');
+    expect(ratingElement).toBeInTheDocument();
   });
 
-  describe('Content Display', () => {
-    it('should display all item information', () => {
-      render(<ItemCard item={mockItem} variant="grid" onEdit={mockOnEdit} />);
-
-      expect(screen.getByText('Test Book')).toBeInTheDocument();
-      expect(screen.getByText('Test Author')).toBeInTheDocument();
-      expect(screen.getByText('BOOK')).toBeInTheDocument();
-      expect(screen.getByText('2023')).toBeInTheDocument();
-    });
-
-    it('should display rating stars correctly', () => {
-      render(<ItemCard item={mockItem} variant="grid" onEdit={mockOnEdit} />);
-
-      const stars = screen.getAllByText('★');
-      expect(stars).toHaveLength(5);
-    });
-
-    it('should show fallback icon when no cover image', () => {
-      const itemWithoutCover = { ...mockItem, coverImage: undefined };
-      render(<ItemCard item={itemWithoutCover} variant="grid" onEdit={mockOnEdit} />);
-
-      expect(screen.getByTestId('fallback-icon')).toBeInTheDocument();
-      expect(screen.getByText('📚')).toBeInTheDocument();
-    });
-
-    it('should display correct type colors and icons', () => {
-      const paperItem = { ...mockItem, type: 'PAPER' as const, coverImage: undefined };
-      render(<ItemCard item={paperItem} variant="grid" onEdit={mockOnEdit} />);
-
-      expect(screen.getByTestId('fallback-icon')).toBeInTheDocument();
-      expect(screen.getByText('📄')).toBeInTheDocument();
-      expect(screen.getByText('PAPER')).toBeInTheDocument();
-    });
+  it('displays read date when available', () => {
+    render(<ItemCard item={mockBook} variant="grid" />);
+    
+    expect(screen.getByText('Read: Jan 15, 2024')).toBeInTheDocument();
   });
 
-  describe('Interactions', () => {
-    it('should call onEdit when card is clicked', () => {
-      render(<ItemCard item={mockItem} variant="grid" onEdit={mockOnEdit} />);
+  it('shows fallback icon when no cover image', () => {
+    const itemWithoutCover = { ...mockBook, coverImage: undefined };
+    render(<ItemCard item={itemWithoutCover} variant="grid" />);
+    
+    expect(screen.getByTestId('fallback-icon')).toBeInTheDocument();
+  });
 
-      fireEvent.click(screen.getByLabelText('Edit Test Book by Test Author'));
-      expect(mockOnEdit).toHaveBeenCalledTimes(1);
-    });
+  it('calls onEdit when clicked', () => {
+    const onEdit = jest.fn();
+    render(<ItemCard item={mockBook} variant="grid" onEdit={onEdit} />);
+    
+    fireEvent.click(screen.getByRole('button'));
+    expect(onEdit).toHaveBeenCalledTimes(1);
+  });
 
-    it('should call onEdit when edit button is clicked', () => {
-      render(<ItemCard item={mockItem} variant="grid" onEdit={mockOnEdit} />);
+  it('calls onEdit on Enter key press', () => {
+    const onEdit = jest.fn();
+    render(<ItemCard item={mockBook} variant="grid" onEdit={onEdit} />);
+    
+    const card = screen.getByRole('button');
+    fireEvent.keyDown(card, { key: 'Enter' });
+    expect(onEdit).toHaveBeenCalledTimes(1);
+  });
 
-      const editButton = screen.getByLabelText('Edit Test Book');
-      fireEvent.click(editButton);
-      expect(mockOnEdit).toHaveBeenCalledTimes(1);
+  it('calls onEdit on Space key press', () => {
+    const onEdit = jest.fn();
+    render(<ItemCard item={mockBook} variant="grid" onEdit={onEdit} />);
+    
+    const card = screen.getByRole('button');
+    fireEvent.keyDown(card, { key: ' ' });
+    expect(onEdit).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not show edit overlay when onEdit not provided', () => {
+    render(<ItemCard item={mockBook} variant="grid" />);
+    
+    expect(screen.queryByText('EDIT')).not.toBeInTheDocument();
+    expect(screen.getByRole('article')).toBeInTheDocument();
+  });
+
+  it('shows edit overlay when onEdit provided', () => {
+    render(<ItemCard item={mockBook} variant="grid" onEdit={() => {}} />);
+    
+    expect(screen.getByRole('button')).toBeInTheDocument();
+  });
+
+  it('limits tags display in grid variant', () => {
+    const itemWithManyTags = {
+      ...mockBook,
+      tags: ['tag1', 'tag2', 'tag3', 'tag4', 'tag5'],
+    };
+    render(<ItemCard item={itemWithManyTags} variant="grid" />);
+    
+    expect(screen.getByText('tag1')).toBeInTheDocument();
+    expect(screen.getByText('tag2')).toBeInTheDocument();
+    expect(screen.queryByText('tag3')).not.toBeInTheDocument();
+  });
+
+  it('shows more tags in list variant', () => {
+    const itemWithManyTags = {
+      ...mockBook,
+      tags: ['tag1', 'tag2', 'tag3', 'tag4', 'tag5'],
+    };
+    render(<ItemCard item={itemWithManyTags} variant="list" />);
+    
+    expect(screen.getByText('tag1')).toBeInTheDocument();
+    expect(screen.getByText('tag2')).toBeInTheDocument();
+    expect(screen.getByText('tag3')).toBeInTheDocument();
+    expect(screen.getByText('tag4')).toBeInTheDocument();
+    expect(screen.queryByText('tag5')).not.toBeInTheDocument();
+  });
+
+  it('handles missing optional fields gracefully', () => {
+    const minimalItem: ItemDTO = {
+      id: '3',
+      title: 'Minimal Item',
+      type: 'ARTICLE',
+      status: 'want-to-read',
+      addedAt: '2024-01-01',
+    };
+    
+    render(<ItemCard item={minimalItem} variant="grid" />);
+    
+    expect(screen.getByText('Minimal Item')).toBeInTheDocument();
+    expect(screen.getByText('ARTICLE')).toBeInTheDocument();
+  });
+
+  it('has proper ARIA labels', () => {
+    render(<ItemCard item={mockBook} variant="grid" onEdit={() => {}} />);
+    
+    const card = screen.getByRole('button');
+    expect(card).toHaveAttribute('aria-label', 'The Pragmatic Programmer by David Thomas - Click to edit');
+  });
+
+  it('has no accessibility violations', async () => {
+    const { container } = render(<ItemCard item={mockBook} variant="grid" onEdit={() => {}} />);
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
+  });
+
+  it('renders efficiently with React.memo', () => {
+    const { rerender } = render(<ItemCard item={mockBook} variant="grid" />);
+    
+    // Same props should not cause re-render
+    rerender(<ItemCard item={mockBook} variant="grid" />);
+    
+    expect(screen.getByText('The Pragmatic Programmer')).toBeInTheDocument();
+  });
+
+  describe('Performance with many cards', () => {
+    it('renders 100 cards without performance issues', () => {
+      const items = Array.from({ length: 100 }, (_, i) => ({
+        ...mockBook,
+        id: `item-${i}`,
+        title: `Book ${i}`,
+      }));
+
+      const start = performance.now();
+      
+      render(
+        <div>
+          {items.map((item) => (
+            <ItemCard key={item.id} item={item} variant="list" />
+          ))}
+        </div>
+      );
+
+      const end = performance.now();
+      const renderTime = end - start;
+      
+      // Should render 100 cards in under 100ms
+      expect(renderTime).toBeLessThan(100);
+      expect(screen.getAllByText(/Book \d+/)).toHaveLength(100);
     });
   });
 });

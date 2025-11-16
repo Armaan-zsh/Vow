@@ -28,7 +28,7 @@ export class UpdateReadingStreakUseCase {
     try {
       // Batch query: Find users with reads in last 24h
       const usersWithReads = await this.getUsersWithReadsYesterday(userIds, yesterday, today);
-      const userIdsWithReads = new Set(usersWithReads.map(u => u.userId));
+      const userIdsWithReads = new Set(usersWithReads.map((u) => u.userId));
 
       // Batch update streaks
       await this.batchUpdateStreaks(userIds, userIdsWithReads, today);
@@ -67,7 +67,7 @@ export class UpdateReadingStreakUseCase {
     const params = [...userIds, yesterday.toISOString(), today.toISOString()];
     const results = await this.itemRepository.executeRawQuery(query, params);
 
-    return results.map(row => ({
+    return results.map((row) => ({
       userId: row.userId as UserId,
       currentStreak: row.currentStreak,
     }));
@@ -115,7 +115,7 @@ export class UpdateReadingStreakUseCase {
 
     for (const user of usersWithReads) {
       const newStreak = user.currentStreak + 1;
-      
+
       if (milestones.includes(newStreak)) {
         await this.analyticsLogger.track('streak_milestone_achieved', user.userId, {
           streakDays: newStreak,
@@ -134,11 +134,16 @@ export class UpdateReadingStreakUseCase {
 
   private getMilestoneName(days: number): string {
     switch (days) {
-      case 7: return 'week_warrior';
-      case 30: return 'monthly_master';
-      case 100: return 'century_scholar';
-      case 365: return 'yearly_champion';
-      default: return 'unknown';
+      case 7:
+        return 'week_warrior';
+      case 30:
+        return 'monthly_master';
+      case 100:
+        return 'century_scholar';
+      case 365:
+        return 'yearly_champion';
+      default:
+        return 'unknown';
     }
   }
 

@@ -1,26 +1,33 @@
-import { ShareProfileUseCase, ShareProfileDTO } from '../../../src/core/use-cases/ShareProfileUseCase';
+import {
+  ShareProfileUseCase,
+  ShareProfileDTO,
+} from '../../../src/core/use-cases/ShareProfileUseCase';
 import { ProfileVisibility, createUserId } from '../../../src/core/entities/User';
-import { AuthorizationError, NotFoundError, ValidationError } from '../../../src/shared/types/errors';
+import {
+  AuthorizationError,
+  NotFoundError,
+  ValidationError,
+} from '../../../src/shared/types/errors';
 
 // Mock dependencies
 const mockUserRepository = {
-  findById: jest.fn()
+  findById: jest.fn(),
 };
 
 const mockJWTService = {
-  sign: jest.fn()
+  sign: jest.fn(),
 };
 
 const mockCache = {
-  set: jest.fn()
+  set: jest.fn(),
 };
 
 const mockAnalytics = {
-  track: jest.fn()
+  track: jest.fn(),
 };
 
 const mockAuditLogger = {
-  log: jest.fn()
+  log: jest.fn(),
 };
 
 describe('ShareProfileUseCase', () => {
@@ -44,7 +51,7 @@ describe('ShareProfileUseCase', () => {
       const input: ShareProfileDTO = {
         userId: mockUserId,
         requestingUserId: mockRequestingUserId,
-        expiresIn: 100 // Too short
+        expiresIn: 100, // Too short
       };
 
       await expect(useCase.execute(input)).rejects.toThrow(ValidationError);
@@ -54,14 +61,14 @@ describe('ShareProfileUseCase', () => {
       const input: ShareProfileDTO = {
         userId: mockUserId,
         requestingUserId: mockRequestingUserId,
-        expiresIn: 3600
+        expiresIn: 3600,
       };
 
       const mockUser = {
         id: mockUserId,
         username: 'testuser',
         name: 'Test User',
-        profileVisibility: ProfileVisibility.PUBLIC
+        profileVisibility: ProfileVisibility.PUBLIC,
       };
 
       mockUserRepository.findById.mockResolvedValue(mockUser);
@@ -76,14 +83,14 @@ describe('ShareProfileUseCase', () => {
       const input: ShareProfileDTO = {
         userId: mockUserId,
         requestingUserId: mockUserId, // Same user
-        expiresIn: 3600
+        expiresIn: 3600,
       };
 
       const mockUser = {
         id: mockUserId,
         username: 'testuser',
         name: 'Test User',
-        profileVisibility: ProfileVisibility.PRIVATE
+        profileVisibility: ProfileVisibility.PRIVATE,
       };
 
       mockUserRepository.findById.mockResolvedValue(mockUser);
@@ -98,13 +105,13 @@ describe('ShareProfileUseCase', () => {
       const input: ShareProfileDTO = {
         userId: mockUserId,
         requestingUserId: mockRequestingUserId, // Different user
-        expiresIn: 3600
+        expiresIn: 3600,
       };
 
       const mockUser = {
         id: mockUserId,
         username: 'testuser',
-        profileVisibility: ProfileVisibility.PRIVATE
+        profileVisibility: ProfileVisibility.PRIVATE,
       };
 
       mockUserRepository.findById.mockResolvedValue(mockUser);
@@ -116,13 +123,13 @@ describe('ShareProfileUseCase', () => {
       const input: ShareProfileDTO = {
         userId: mockUserId,
         requestingUserId: mockRequestingUserId,
-        expiresIn: 3600
+        expiresIn: 3600,
       };
 
       const mockUser = {
         id: mockUserId,
         username: 'testuser',
-        profileVisibility: ProfileVisibility.PUBLIC
+        profileVisibility: ProfileVisibility.PUBLIC,
       };
 
       mockUserRepository.findById.mockResolvedValue(mockUser);
@@ -138,14 +145,14 @@ describe('ShareProfileUseCase', () => {
       const input: ShareProfileDTO = {
         userId: mockUserId,
         requestingUserId: mockRequestingUserId,
-        expiresIn: 3600
+        expiresIn: 3600,
       };
 
       const mockUser = {
         id: mockUserId,
         username: 'publicuser',
         name: 'Public User',
-        profileVisibility: ProfileVisibility.PUBLIC
+        profileVisibility: ProfileVisibility.PUBLIC,
       };
 
       mockUserRepository.findById.mockResolvedValue(mockUser);
@@ -163,13 +170,13 @@ describe('ShareProfileUseCase', () => {
       const input: ShareProfileDTO = {
         userId: mockUserId,
         requestingUserId: mockRequestingUserId,
-        expiresIn: 7200
+        expiresIn: 7200,
       };
 
       const mockUser = {
         id: mockUserId,
         username: 'unlisteduser',
-        profileVisibility: ProfileVisibility.UNLISTED
+        profileVisibility: ProfileVisibility.UNLISTED,
       };
 
       mockUserRepository.findById.mockResolvedValue(mockUser);
@@ -184,7 +191,7 @@ describe('ShareProfileUseCase', () => {
         {
           userId: mockUserId,
           type: 'profile_share',
-          exp: expect.any(Number)
+          exp: expect.any(Number),
         },
         7200
       );
@@ -194,13 +201,13 @@ describe('ShareProfileUseCase', () => {
       const input: ShareProfileDTO = {
         userId: mockUserId,
         requestingUserId: mockRequestingUserId,
-        expiresIn: 1800
+        expiresIn: 1800,
       };
 
       const mockUser = {
         id: mockUserId,
         username: 'unlisteduser',
-        profileVisibility: ProfileVisibility.UNLISTED
+        profileVisibility: ProfileVisibility.UNLISTED,
       };
 
       mockUserRepository.findById.mockResolvedValue(mockUser);
@@ -208,11 +215,7 @@ describe('ShareProfileUseCase', () => {
 
       await useCase.execute(input);
 
-      expect(mockCache.set).toHaveBeenCalledWith(
-        'share_token:redis-token',
-        mockUserId,
-        1800
-      );
+      expect(mockCache.set).toHaveBeenCalledWith('share_token:redis-token', mockUserId, 1800);
     });
   });
 
@@ -221,41 +224,37 @@ describe('ShareProfileUseCase', () => {
       const input: ShareProfileDTO = {
         userId: mockUserId,
         requestingUserId: mockRequestingUserId,
-        expiresIn: 3600
+        expiresIn: 3600,
       };
 
       const mockUser = {
         id: mockUserId,
         username: 'testuser',
-        profileVisibility: ProfileVisibility.PUBLIC
+        profileVisibility: ProfileVisibility.PUBLIC,
       };
 
       mockUserRepository.findById.mockResolvedValue(mockUser);
 
       await useCase.execute(input);
 
-      expect(mockAnalytics.track).toHaveBeenCalledWith(
-        'profile_shared',
-        mockRequestingUserId,
-        {
-          sharedUserId: mockUserId,
-          visibility: ProfileVisibility.PUBLIC,
-          isPublic: true
-        }
-      );
+      expect(mockAnalytics.track).toHaveBeenCalledWith('profile_shared', mockRequestingUserId, {
+        sharedUserId: mockUserId,
+        visibility: ProfileVisibility.PUBLIC,
+        isPublic: true,
+      });
     });
 
     it('should create audit log entry', async () => {
       const input: ShareProfileDTO = {
         userId: mockUserId,
         requestingUserId: mockRequestingUserId,
-        expiresIn: 3600
+        expiresIn: 3600,
       };
 
       const mockUser = {
         id: mockUserId,
         username: 'testuser',
-        profileVisibility: ProfileVisibility.UNLISTED
+        profileVisibility: ProfileVisibility.UNLISTED,
       };
 
       mockUserRepository.findById.mockResolvedValue(mockUser);
@@ -263,16 +262,12 @@ describe('ShareProfileUseCase', () => {
 
       await useCase.execute(input);
 
-      expect(mockAuditLogger.log).toHaveBeenCalledWith(
-        'profile.shared',
-        mockRequestingUserId,
-        {
-          sharedUserId: mockUserId,
-          visibility: ProfileVisibility.UNLISTED,
-          url: '/share/audit-token',
-          expiresAt: expect.any(Date)
-        }
-      );
+      expect(mockAuditLogger.log).toHaveBeenCalledWith('profile.shared', mockRequestingUserId, {
+        sharedUserId: mockUserId,
+        visibility: ProfileVisibility.UNLISTED,
+        url: '/share/audit-token',
+        expiresAt: expect.any(Date),
+      });
     });
   });
 
@@ -281,7 +276,7 @@ describe('ShareProfileUseCase', () => {
       const input: ShareProfileDTO = {
         userId: mockUserId,
         requestingUserId: mockRequestingUserId,
-        expiresIn: 3600
+        expiresIn: 3600,
       };
 
       mockUserRepository.findById.mockResolvedValue(null);
@@ -292,14 +287,14 @@ describe('ShareProfileUseCase', () => {
     it('should use default expiresIn when not provided', async () => {
       const input = {
         userId: mockUserId,
-        requestingUserId: mockRequestingUserId
+        requestingUserId: mockRequestingUserId,
         // expiresIn not provided, should default to 3600
       } as ShareProfileDTO;
 
       const mockUser = {
         id: mockUserId,
         username: 'testuser',
-        profileVisibility: ProfileVisibility.UNLISTED
+        profileVisibility: ProfileVisibility.UNLISTED,
       };
 
       mockUserRepository.findById.mockResolvedValue(mockUser);
@@ -319,14 +314,14 @@ describe('ShareProfileUseCase', () => {
       const input: ShareProfileDTO = {
         userId: mockUserId,
         requestingUserId: mockRequestingUserId,
-        expiresIn: 3600
+        expiresIn: 3600,
       };
 
       const mockUser = {
         id: mockUserId,
         username: 'metauser',
         name: 'Meta User',
-        profileVisibility: ProfileVisibility.PUBLIC
+        profileVisibility: ProfileVisibility.PUBLIC,
       };
 
       mockUserRepository.findById.mockResolvedValue(mockUser);
@@ -336,7 +331,7 @@ describe('ShareProfileUseCase', () => {
       expect(result.metadata).toEqual({
         title: "Meta User's Reading Profile",
         description: "Check out metauser's reading collection on ReadFlex",
-        username: 'metauser'
+        username: 'metauser',
       });
     });
 
@@ -344,14 +339,14 @@ describe('ShareProfileUseCase', () => {
       const input: ShareProfileDTO = {
         userId: mockUserId,
         requestingUserId: mockRequestingUserId,
-        expiresIn: 3600
+        expiresIn: 3600,
       };
 
       const mockUser = {
         id: mockUserId,
         username: 'noname',
         name: undefined,
-        profileVisibility: ProfileVisibility.PUBLIC
+        profileVisibility: ProfileVisibility.PUBLIC,
       };
 
       mockUserRepository.findById.mockResolvedValue(mockUser);

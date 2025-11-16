@@ -6,5 +6,8 @@ export interface ItemDTO {
   coverImage?: string;
   publishedYear?: number;
   rating?: number;
+  readDate?: string;
+  status: 'want-to-read' | 'reading' | 'read' | 'skimmed';
+  tags?: string[];
   addedAt: string;
 }

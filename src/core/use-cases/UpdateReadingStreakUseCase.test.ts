@@ -43,7 +43,7 @@ describe('UpdateReadingStreakUseCase', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
-    
+
     // Set fixed date: March 15, 2024 12:00 UTC
     jest.setSystemTime(new Date('2024-03-15T12:00:00.000Z'));
 
@@ -69,7 +69,7 @@ describe('UpdateReadingStreakUseCase', () => {
 
     it('should increment streak for users with reads yesterday', async () => {
       const userIds = [createUserId('user1'), createUserId('user2')];
-      
+
       // Mock users with reads yesterday
       mockItemRepository.executeRawQuery
         .mockResolvedValueOnce([
@@ -95,10 +95,12 @@ describe('UpdateReadingStreakUseCase', () => {
       expect(mockItemRepository.executeRawQuery).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE users'),
         expect.arrayContaining([
-          'user1', 'user2', // CASE conditions
+          'user1',
+          'user2', // CASE conditions
           '2024-03-15T00:00:00.000Z', // lastReadDate
           '2024-03-15T00:00:00.000Z', // updatedAt
-          'user1', 'user2', // WHERE IN
+          'user1',
+          'user2', // WHERE IN
         ])
       );
 
@@ -111,7 +113,7 @@ describe('UpdateReadingStreakUseCase', () => {
 
     it('should reset streak for users without reads yesterday', async () => {
       const userIds = [createUserId('user1'), createUserId('user2')];
-      
+
       // Mock no users with reads yesterday
       mockItemRepository.executeRawQuery
         .mockResolvedValueOnce([]) // No reads found
@@ -134,12 +136,10 @@ describe('UpdateReadingStreakUseCase', () => {
 
     it('should handle mixed scenario - some users with reads, some without', async () => {
       const userIds = [createUserId('user1'), createUserId('user2'), createUserId('user3')];
-      
+
       // Mock only user1 has reads yesterday
       mockItemRepository.executeRawQuery
-        .mockResolvedValueOnce([
-          { userId: 'user1', currentStreak: 10 },
-        ])
+        .mockResolvedValueOnce([{ userId: 'user1', currentStreak: 10 }])
         .mockResolvedValueOnce([]);
 
       await useCase.executeBatch(userIds);
@@ -153,7 +153,7 @@ describe('UpdateReadingStreakUseCase', () => {
 
     it('should track milestone achievements', async () => {
       const userIds = [createUserId('user1'), createUserId('user2')];
-      
+
       // Mock users approaching milestones
       mockItemRepository.executeRawQuery
         .mockResolvedValueOnce([
@@ -165,25 +165,17 @@ describe('UpdateReadingStreakUseCase', () => {
       await useCase.executeBatch(userIds);
 
       // Verify milestone tracking
-      expect(mockAnalyticsLogger.track).toHaveBeenCalledWith(
-        'streak_milestone_achieved',
-        'user1',
-        {
-          streakDays: 7,
-          milestone: 'week_warrior',
-          timestamp: '2024-03-15T12:00:00.000Z',
-        }
-      );
+      expect(mockAnalyticsLogger.track).toHaveBeenCalledWith('streak_milestone_achieved', 'user1', {
+        streakDays: 7,
+        milestone: 'week_warrior',
+        timestamp: '2024-03-15T12:00:00.000Z',
+      });
 
-      expect(mockAnalyticsLogger.track).toHaveBeenCalledWith(
-        'streak_milestone_achieved',
-        'user2',
-        {
-          streakDays: 30,
-          milestone: 'monthly_master',
-          timestamp: '2024-03-15T12:00:00.000Z',
-        }
-      );
+      expect(mockAnalyticsLogger.track).toHaveBeenCalledWith('streak_milestone_achieved', 'user2', {
+        streakDays: 30,
+        milestone: 'monthly_master',
+        timestamp: '2024-03-15T12:00:00.000Z',
+      });
 
       expect(mockLogger.info).toHaveBeenCalledWith('Streak milestone achieved', {
         userId: 'user1',
@@ -199,13 +191,13 @@ describe('UpdateReadingStreakUseCase', () => {
         createUserId('user3'),
         createUserId('user4'),
       ];
-      
+
       mockItemRepository.executeRawQuery
         .mockResolvedValueOnce([
-          { userId: 'user1', currentStreak: 6 },   // 7 days
-          { userId: 'user2', currentStreak: 99 },  // 100 days
+          { userId: 'user1', currentStreak: 6 }, // 7 days
+          { userId: 'user2', currentStreak: 99 }, // 100 days
           { userId: 'user3', currentStreak: 364 }, // 365 days
-          { userId: 'user4', currentStreak: 50 },  // No milestone
+          { userId: 'user4', currentStreak: 50 }, // No milestone
         ])
         .mockResolvedValueOnce([]);
 
@@ -226,7 +218,7 @@ describe('UpdateReadingStreakUseCase', () => {
 
     it('should be idempotent - handle multiple runs safely', async () => {
       const userIds = [createUserId('user1')];
-      
+
       mockItemRepository.executeRawQuery
         .mockResolvedValue([{ userId: 'user1', currentStreak: 5 }])
         .mockResolvedValueOnce([]);
@@ -244,9 +236,7 @@ describe('UpdateReadingStreakUseCase', () => {
       jest.setSystemTime(new Date('2024-03-10T07:00:00.000Z')); // DST starts in US
 
       const userIds = [createUserId('user1')];
-      mockItemRepository.executeRawQuery
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([]);
+      mockItemRepository.executeRawQuery.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
 
       await useCase.executeBatch(userIds);
 
@@ -263,30 +253,25 @@ describe('UpdateReadingStreakUseCase', () => {
     it('should handle database errors gracefully', async () => {
       const userIds = [createUserId('user1')];
       const dbError = new Error('Database connection failed');
-      
+
       mockItemRepository.executeRawQuery.mockRejectedValueOnce(dbError);
 
       await expect(useCase.executeBatch(userIds)).rejects.toThrow('Database connection failed');
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        'Failed to update reading streaks',
-        dbError
-      );
+      expect(mockLogger.error).toHaveBeenCalledWith('Failed to update reading streaks', dbError);
     });
 
     it('should handle large batch sizes efficiently', async () => {
       // Test with 1000 users
       const userIds = Array.from({ length: 1000 }, (_, i) => createUserId(`user${i}`));
-      
-      mockItemRepository.executeRawQuery
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([]);
+
+      mockItemRepository.executeRawQuery.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
 
       await useCase.executeBatch(userIds);
 
       // Verify single batch query (not N+1)
       expect(mockItemRepository.executeRawQuery).toHaveBeenCalledTimes(2);
-      
+
       // Verify batch update includes all users
       const updateCall = mockItemRepository.executeRawQuery.mock.calls[1];
       expect(updateCall[0]).toContain('WHERE id IN');
