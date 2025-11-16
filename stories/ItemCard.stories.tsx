@@ -28,6 +28,9 @@ const mockBook: ItemDTO = {
   coverImage: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=300&fit=crop',
   publishedYear: 1988,
   rating: 5,
+  status: 'read',
+  readDate: '2024-01-15',
+  tags: ['design', 'ux'],
   addedAt: '2024-01-15T10:00:00Z'
 };
 
@@ -38,6 +41,8 @@ const mockPaper: ItemDTO = {
   type: 'PAPER',
   publishedYear: 2017,
   rating: 4,
+  status: 'reading',
+  tags: ['ai', 'transformers'],
   addedAt: '2024-01-10T14:30:00Z'
 };
 
@@ -48,6 +53,8 @@ const mockArticle: ItemDTO = {
   type: 'ARTICLE',
   coverImage: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=200&h=300&fit=crop',
   publishedYear: 2024,
+  status: 'want-to-read',
+  tags: ['web', 'frontend'],
   addedAt: '2024-01-20T09:15:00Z'
 };
 
@@ -89,7 +96,7 @@ export const GridLayout: Story = {
       <ItemCard item={mockBook} variant="grid" onEdit={() => {}} />
       <ItemCard item={mockPaper} variant="grid" onEdit={() => {}} />
       <ItemCard item={mockArticle} variant="grid" onEdit={() => {}} />
-      <ItemCard item={{...mockBook, id: '4', title: 'Another Book'}} variant="grid" onEdit={() => {}} />
+      <ItemCard item={{...mockBook, id: '4', title: 'Another Book', status: 'read'}} variant="grid" onEdit={() => {}} />
     </div>
   ),
 };
