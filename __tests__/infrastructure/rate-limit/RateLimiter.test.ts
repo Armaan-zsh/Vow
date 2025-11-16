@@ -1,11 +1,13 @@
 // @ts-nocheck
 import { RateLimiter, RATE_LIMITS } from '../../../src/infrastructure/rate-limit/RateLimiter';
 
+// FIX: Declare mockRedis before jest.mock to avoid hoisting issues
 const mockRedis = {
   eval: jest.fn(),
   del: jest.fn(),
 };
 
+// FIX: Use factory function to access mockRedis after initialization
 jest.mock(
   '@upstash/redis',
   () => ({

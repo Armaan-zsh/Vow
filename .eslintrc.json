@@ -1,0 +1,21 @@
+{
+  "extends": ["next/core-web-vitals"],
+  "rules": {
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "VariableDeclarator[id.name='input'][typeAnnotation.typeAnnotation.typeName.name=/DTO$/]",
+        "message": "Use createSearchItemsDTO() or createAddItemDTO() from factories"
+      }
+    ],
+    "no-restricted-properties": [
+      "error",
+      {
+        "object": "process",
+        "property": "env",
+        "message": "Use validateEnv() or test factories"
+      }
+    ]
+  }
+}
+

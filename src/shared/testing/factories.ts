@@ -1,22 +1,17 @@
-import { SearchItemsDTO, SortBy } from '@/core/use-cases/SearchItemsUseCase';
+import { SearchItemsDTO } from '@/core/use-cases/SearchItemsUseCase';
 import { AddItemDTO } from '@/core/use-cases/AddItemUseCase';
-import { createUserId } from '@/core/entities/User';
-import { ItemType } from '@/core/entities/Item';
+import { createUserId } from '@/shared/types/branded';
+import { ItemType, SortBy } from '@/shared/types/enums';
+import { User } from '@/core/entities/User';
 
-// Fix: Make sortBy and limit optional in factory since they have defaults
-type SearchItemsDTOInput = Omit<SearchItemsDTO, 'sortBy' | 'limit'> & {
-  sortBy?: SortBy;
-  limit?: number;
-};
-
-// FIX: Factory ensures ALL required fields are present
-export const createSearchItemsDTO = (
-  overrides: Partial<SearchItemsDTOInput> = {}
-): SearchItemsDTO => ({
+// =====================================================================
+// FIX: Type-safe factories that guarantee ALL required DTO fields
+// =====================================================================
+export const createSearchItemsDTO = (overrides: Partial<SearchItemsDTO> = {}): SearchItemsDTO => ({
   userId: createUserId('user_123'),
   query: 'test query',
-  sortBy: SortBy.RELEVANCE,
-  limit: 20,
+  sortBy: SortBy.RELEVANCE, // ← FIX: Required field with default
+  limit: 20, // ← FIX: Required field with default
   type: undefined,
   readDateFrom: undefined,
   readDateTo: undefined,
@@ -30,16 +25,19 @@ export const createAddItemDTO = (overrides: Partial<AddItemDTO> = {}): AddItemDT
   title: 'Test Book',
   type: ItemType.BOOK,
   author: 'Test Author',
-  isbn: '9780123456789',
-  metadata: {},
+  url: undefined,
+  isbn: undefined,
+  doi: undefined,
+  metadata: undefined,
   ...overrides,
 });
 
-// FIX: User factory for consistent test data
-export const createTestUser = (overrides: Partial<any> = {}) => ({
-  id: createUserId('user_123'),
-  username: 'testuser',
-  email: 'test@example.com',
-  stats: { totalItems: 0, booksCount: 0, papersCount: 0, articlesCount: 0 },
-  ...overrides,
-});
+export const createTestUser = (overrides: any = {}): User => {
+  return new User({
+    id: createUserId('user_123'),
+    username: 'testuser',
+    email: 'test@example.com',
+    stats: { totalItems: 0, booksCount: 0, papersCount: 0, articlesCount: 0 },
+    ...overrides,
+  });
+};

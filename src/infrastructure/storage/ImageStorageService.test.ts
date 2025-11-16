@@ -3,13 +3,16 @@ import { ValidationError, ProviderAPIError } from '@/shared/types/errors';
 import sharp from 'sharp';
 
 // Mock Supabase client
+const mockStorageBucket = {
+  upload: jest.fn(),
+  getPublicUrl: jest.fn(),
+  createSignedUrl: jest.fn(),
+  remove: jest.fn(),
+};
+
 const mockSupabaseClient = {
   storage: {
-    from: jest.fn().mockReturnThis(),
-    upload: jest.fn(),
-    getPublicUrl: jest.fn(),
-    createSignedUrl: jest.fn(),
-    remove: jest.fn(),
+    from: jest.fn(() => mockStorageBucket),
   },
 };
 
@@ -46,8 +49,8 @@ describe('SupabaseImageStorageService', () => {
         height: 1200,
       });
       mockImage.toBuffer.mockResolvedValue(Buffer.from('transformed-webp'));
-      mockSupabaseClient.storage.upload.mockResolvedValue({ error: null });
-      mockSupabaseClient.storage.remove.mockResolvedValue({ error: null });
+      mockStorageBucket.upload.mockResolvedValue({ error: null });
+      mockStorageBucket.remove.mockResolvedValue({ error: null });
     });
 
     it('should upload image successfully', async () => {
@@ -60,7 +63,7 @@ describe('SupabaseImageStorageService', () => {
         position: 'center',
       });
       expect(mockImage.webp).toHaveBeenCalledWith({ quality: 85 });
-      expect(mockSupabaseClient.storage.upload).toHaveBeenCalledWith(
+      expect(mockStorageBucket.upload).toHaveBeenCalledWith(
         `covers/${userId}/${itemId}.webp`,
         Buffer.from('transformed-webp'),
         {
@@ -115,7 +118,7 @@ describe('SupabaseImageStorageService', () => {
     });
 
     it('should handle upload errors', async () => {
-      mockSupabaseClient.storage.upload.mockResolvedValue({
+      mockStorageBucket.upload.mockResolvedValue({
         error: { message: 'Upload failed' },
       });
 
@@ -130,14 +133,14 @@ describe('SupabaseImageStorageService', () => {
       const path = 'covers/user/item.webp';
       const publicUrl = 'https://example.com/covers/user/item.webp';
 
-      mockSupabaseClient.storage.getPublicUrl.mockReturnValue({
+      mockStorageBucket.getPublicUrl.mockReturnValue({
         data: { publicUrl },
       });
 
       const result = service.getPublicUrl(path);
 
       expect(result).toBe(publicUrl);
-      expect(mockSupabaseClient.storage.getPublicUrl).toHaveBeenCalledWith(path);
+      expect(mockStorageBucket.getPublicUrl).toHaveBeenCalledWith(path);
     });
   });
 
@@ -146,7 +149,7 @@ describe('SupabaseImageStorageService', () => {
       const path = 'covers/user/item.webp';
       const signedUrl = 'https://example.com/signed-url';
 
-      mockSupabaseClient.storage.createSignedUrl.mockResolvedValue({
+      mockStorageBucket.createSignedUrl.mockResolvedValue({
         data: { signedUrl },
         error: null,
       });
@@ -154,11 +157,11 @@ describe('SupabaseImageStorageService', () => {
       const result = await service.generateSignedUrl(path);
 
       expect(result).toBe(signedUrl);
-      expect(mockSupabaseClient.storage.createSignedUrl).toHaveBeenCalledWith(path, 3600);
+      expect(mockStorageBucket.createSignedUrl).toHaveBeenCalledWith(path, 3600);
     });
 
     it('should handle signed URL errors', async () => {
-      mockSupabaseClient.storage.createSignedUrl.mockResolvedValue({
+      mockStorageBucket.createSignedUrl.mockResolvedValue({
         error: { message: 'Access denied' },
       });
 
@@ -171,15 +174,15 @@ describe('SupabaseImageStorageService', () => {
   describe('deleteCover', () => {
     it('should delete image successfully', async () => {
       const path = 'covers/user/item.webp';
-      mockSupabaseClient.storage.remove.mockResolvedValue({ error: null });
+      mockStorageBucket.remove.mockResolvedValue({ error: null });
 
       await service.deleteCover(path);
 
-      expect(mockSupabaseClient.storage.remove).toHaveBeenCalledWith([path]);
+      expect(mockStorageBucket.remove).toHaveBeenCalledWith([path]);
     });
 
     it('should handle delete errors', async () => {
-      mockSupabaseClient.storage.remove.mockResolvedValue({
+      mockStorageBucket.remove.mockResolvedValue({
         error: { message: 'File not found' },
       });
 

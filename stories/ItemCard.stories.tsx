@@ -110,3 +110,33 @@ export const ListLayout: Story = {
     </div>
   ),
 };
+
+export const WithoutEdit: Story = {
+  args: {
+    item: mockBook,
+    variant: 'grid',
+  },
+};
+
+export const AllVariants: Story = {
+  render: () => (
+    <div className="space-y-8 p-6">
+      <div>
+        <h2 className="text-xl font-black font-mono mb-4">Grid Variant</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <ItemCard item={mockBook} variant="grid" onEdit={() => {}} />
+          <ItemCard item={mockPaper} variant="grid" onEdit={() => {}} />
+          <ItemCard item={mockArticle} variant="grid" onEdit={() => {}} />
+        </div>
+      </div>
+      <div>
+        <h2 className="text-xl font-black font-mono mb-4">List Variant</h2>
+        <div className="space-y-4 max-w-2xl">
+          <ItemCard item={mockBook} variant="list" onEdit={() => {}} />
+          <ItemCard item={mockPaper} variant="list" onEdit={() => {}} />
+          <ItemCard item={mockArticle} variant="list" onEdit={() => {}} />
+        </div>
+      </div>
+    </div>
+  ),
+};

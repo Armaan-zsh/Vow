@@ -15,12 +15,12 @@ interface ItemCardProps {
 }
 
 const cardVariants = cva(
-  'relative bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] cursor-pointer overflow-hidden',
+  'relative bg-white border-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] cursor-pointer overflow-hidden transition-all duration-200',
   {
     variants: {
       variant: {
-        grid: 'w-[200px] h-[300px]',
-        list: 'w-full h-[120px] flex',
+        grid: 'w-[200px] h-[300px] border-[#00FFFF] hover:border-[#FF00FF] hover:shadow-[12px_12px_0px_0px_rgba(255,0,255,0.8)]',
+        list: 'w-full h-[120px] flex border-[#FFFF00] hover:border-[#00FFFF] hover:shadow-[12px_12px_0px_0px_rgba(0,255,255,0.8)]',
       },
     },
   }
@@ -57,10 +57,13 @@ export const ItemCard = memo(function ItemCard({ item, variant, onEdit }: ItemCa
   return (
     <motion.article
       className={cardVariants({ variant })}
+      style={{
+        imageRendering: 'pixelated',
+      }}
       whileHover={{
         scale: isGrid ? 1.05 : 1.02,
         rotate: isGrid ? 2 : 0,
-        boxShadow: '12px 12px 0px 0px rgba(0,0,0,1)',
+        filter: 'contrast(1.2) saturate(1.3)',
       }}
       whileTap={{ scale: 0.95 }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
@@ -116,7 +119,7 @@ export const ItemCard = memo(function ItemCard({ item, variant, onEdit }: ItemCa
             {item.tags.slice(0, isGrid ? 2 : 4).map((tag) => (
               <span
                 key={tag}
-                className="px-1 py-0.5 text-[10px] font-bold bg-gray-200 border border-black font-mono"
+                className="px-1 py-0.5 text-[10px] font-bold bg-gray-200 border border-[#00FFFF] font-mono"
               >
                 {tag}
               </span>
@@ -133,7 +136,7 @@ export const ItemCard = memo(function ItemCard({ item, variant, onEdit }: ItemCa
           transition={{ duration: 0.2 }}
         >
           <button
-            className="px-4 py-2 bg-[#FFD23F] text-black font-black border-2 border-black transform hover:scale-110 font-mono"
+            className="px-4 py-2 bg-[#FFD23F] text-black font-black border-2 border-[#FF00FF] transform hover:scale-110 font-mono hover:border-[#00FFFF] transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               onEdit();

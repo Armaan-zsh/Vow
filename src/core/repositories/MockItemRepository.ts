@@ -12,7 +12,10 @@ import { UserId } from '../entities/User';
  * Provides in-memory storage with realistic latency simulation
  */
 export class MockItemRepository implements IItemRepository {
-  private items = new Map<string, Item>();
+  public data = new Map<string, Item>();
+  private get items() {
+    return this.data;
+  }
 
   async findById(id: ItemId): Promise<Item | null> {
     await this.simulateLatency();

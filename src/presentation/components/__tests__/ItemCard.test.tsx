@@ -196,5 +196,31 @@ describe('ItemCard', () => {
       expect(renderTime).toBeLessThan(100);
       expect(screen.getAllByText(/Book \d+/)).toHaveLength(100);
     });
+
+    it('renders 1000 cards for virtualization testing', () => {
+      const items = Array.from({ length: 1000 }, (_, i) => ({
+        ...mockBook,
+        id: `item-${i}`,
+        title: `Book ${i}`,
+      }));
+
+      const start = performance.now();
+
+      render(
+        <div>
+          {items.map((item) => (
+            <ItemCard key={item.id} item={item} variant="list" />
+          ))}
+        </div>
+      );
+
+      const end = performance.now();
+      const renderTime = end - start;
+
+      // Should render 1000 cards (virtualized later)
+      expect(screen.getAllByText(/Book \d+/)).toHaveLength(1000);
+      // Performance check - should complete in reasonable time
+      expect(renderTime).toBeLessThan(5000);
+    });
   });
 });

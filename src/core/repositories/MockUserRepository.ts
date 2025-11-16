@@ -6,7 +6,10 @@ import { User, UserId, UserStats, createUserId } from '../entities/User';
  * Provides in-memory storage with full repository functionality
  */
 export class MockUserRepository implements IUserRepository {
-  private users = new Map<string, User>();
+  public data = new Map<string, User>();
+  private get users() {
+    return this.data;
+  }
 
   async create(user: User): Promise<void> {
     // Check for duplicate username
